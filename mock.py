@@ -34,8 +34,8 @@ def triggerCommand(filename):
     result2 = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     print('Image Captured \n')
 
-def WP(long, lat, alt):
-    vehicle.simple_goto(long,lat,alt)
+def WP(lon, lat, alt):
+    vehicle.simple_goto(lon,lat,alt)
 
 def searchArea():
     print("search the area")
@@ -58,11 +58,20 @@ while not vehicle.armed:
     time.sleep(1)
 print("DRONE IS ARMED")
 
+while (vehicle.mode != "AUTO"):
+    print("IN AUTO MODE")
+    
 #checking the UAS mode tp start the script
-if (vehicle.mode == "AUTO"):
-    for x in range(2):
-        vehicle.simple_goto(longitude[x],latitude[x],alt)
-        triggerCommand("image"+str(x))
+while True:
+    if (vehicle.mode == "AUTO"):
+        print("IN AUTO MODE")
+        for x in range(2):
+            print(f"GOING TO WAYPOINT: {x}") 
+            vehicle.simple_goto(longitude[x],latitude[x],alt)
+            print("TRIGGERING CAMERA")
+            triggerCommand("image"+str(x))
+    if (vehicle.mode == "RTL"):
+        print("RTL HAS BEEN INTIALIZED")
 
 
 vehicle.close()
