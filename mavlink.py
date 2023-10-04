@@ -1,11 +1,11 @@
 from pymavlink import mavutil
 
-UAS = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
-
+#UAS = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+UAS = mavutil.mavlink_connection('COM7', baud=57600)
 # Restart the ArduSub board !
-UAS.reboot_autopilot()
+#UAS.reboot_autopilot()
 #waiting for heartbeat before sending commands
-UAS.wait_heartbeat()
+#UAS.wait_heartbeat()
 
 # Define the waypoint parameters
 waypoint_number = [1,2]  # You can increment this for each waypoint
@@ -15,7 +15,21 @@ altitude_m = 60  # Desired altitude in meters above ground level (AGL)
 for x in range(2):
     # Create a waypoint command
     waypoint_command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
-    params = [0, 0, 0, 0, latitude_deg[x], longitude_deg[x], altitude_m, 0, 0, 0, 0]
+
+
+
+    waypoint = [UAS.target_system,  #target_system
+        UAS.target_component, #target_component
+        0, #frame try setting to 3 for more accuracy
+        waypoint_command, #MAV_CMD_NAV_WAYPOINT (16 ) or try to change it to  waypoint_command
+        0, #param1 hold: wait # time at position (seconds)
+        10, #param2 Accept radius (m)
+        0, #param3 pass radius (m)
+        0, #param4 yaw (deg)
+        latitude_deg[x], #current 
+        longitude_deg[x],   #autocontinue
+    altitude_m]     #param1
+    
 
     # Send the waypoint command
     UAS.mav.command_long_send(
