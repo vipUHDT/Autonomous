@@ -51,39 +51,41 @@ for x in range(2):
     altitude_m]   
 
     # Send the waypoint command
-    UAS.mav.command_int_send(
+    command1 = UAS.mav.command_int_send(
         *INT_SEND_WAYPOINT_parameter
         
     )
+
+    UAS.send(command1)
     
-    # Wait for the COMMAND_ACK
-    while True:
-        msg = UAS.recv_msg()
-        if msg.get_type() == 'COMMAND_ACK':
-            if msg.command == waypoint_command:
-                if msg.result == mavutil.mavlink.MAV_CMD_ACK_OK:
-                    print(f"Waypoint {waypoint_number} sent successfully.")
-                    break
-                else:
-                    print(f"Error sending waypoint {waypoint_number}. Error code: {msg.result}")
-                    break
+    # # Wait for the COMMAND_ACK
+    # while True:
+    #     msg = UAS.recv_msg()
+    #     if msg.get_type() == 'COMMAND_ACK':
+    #         if msg.command == waypoint_command:
+    #             if msg.result == mavutil.mavlink.MAV_CMD_ACK_OK:
+    #                 print(f"Waypoint {waypoint_number} sent successfully.")
+    #                 break
+    #             else:
+    #                 print(f"Error sending waypoint {waypoint_number}. Error code: {msg.result}")
+    #                 break
 
     # Send the waypoint command
     UAS.mav.command_long_send(
         *LONG_SEND_WAYPOINT_parameter
     )
 
-    # Wait for the COMMAND_ACK
-    while True:
-        msg = UAS.recv_msg()
-        if msg.get_type() == 'COMMAND_ACK':
-            if msg.command == waypoint_command:
-                if msg.result == mavutil.mavlink.MAV_CMD_ACK_OK:
-                    print(f"Waypoint {waypoint_number} sent successfully.")
-                    break
-                else:
-                    print(f"Error sending waypoint {waypoint_number}. Error code: {msg.result}")
-                    break
+    # # Wait for the COMMAND_ACK
+    # while True:
+    #     msg = UAS.recv_msg()
+    #     if msg.get_type() == 'COMMAND_ACK':
+    #         if msg.command == waypoint_command:
+    #             if msg.result == mavutil.mavlink.MAV_CMD_ACK_OK:
+    #                 print(f"Waypoint {waypoint_number} sent successfully.")
+    #                 break
+    #             else:
+    #                 print(f"Error sending waypoint {waypoint_number}. Error code: {msg.result}")
+    #                 break
 
     # Wait for confirmation (optional)
     print("Waypoint sent. Waiting for confirmation...")
