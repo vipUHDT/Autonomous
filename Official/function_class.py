@@ -42,7 +42,7 @@ class CLASS:
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.filename = f"image{self.image_number}"
 
-    def waypoint_lap(self):
+    def waypoint_lap(self, waypoint_array):
         """
         Simulate a waypoint lap.
 
@@ -146,7 +146,7 @@ class CLASS:
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[6]) + '\'', filename)
         return print("image geotagged")
 
-    def deliver_payload(self, servo_x):
+    def deliver_payload(self, servo_x, longitude, latitude):
         """
         Deliver payload to a target.
 
