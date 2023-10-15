@@ -1,7 +1,7 @@
 import time
 import os
 import subprocess
-import gphoto2
+# import gphoto2
 from dronekit import connect, VehicleMode, LocationGlobalRelative,LocationGlobal, Command
 
 
@@ -13,18 +13,18 @@ alt = 20
 #usb(Pi) to micro usb (Pixhawk)
 connection_string = "/dev/ttyACM0"
 #baud rate
-baud_rate = 921600
+baud_rate = 57600
 
 #connecting to UAS
 print("Connecting to UAS")
 vehicle = connect(connection_string, baud=baud_rate, wait_ready = True)
 print("Connected")
 
-#connecting to camera
-print("Connecting to Camera")
-camera = gp.Camera()
-camera.init
-print("Camera Connected")
+# #connecting to camera
+# print("Connecting to Camera")
+# camera = gp.Camera()
+# camera.init
+# print("Camera Connected")
 
 #Trigger the camera function
 def triggerCommand(filename):

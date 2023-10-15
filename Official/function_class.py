@@ -1,5 +1,7 @@
 import time
 import os
+import math
+import multiprocessing
 import subprocess
 import gphoto2 as gp
 import exiftool
@@ -42,28 +44,23 @@ class CLASS:
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.filename = f"image{self.image_number}"
 
-    def waypoint_lap(self, waypoint_array):
-        """
-        Simulate a waypoint lap.
+        self.search_area_latitude = [
+            38.31455510, 38.31453830, 38.31452150, 38.31455510, 38.31453830, 38.31452150,
+            38.31450570, 38.31448990, 38.31447520, 38.31445830, 38.31444260, 38.31442890,
+            38.31441410, 38.31439630, 38.31438150, 38.31437100, 38.31435840, 38.31425310,
+            38.31426740, 38.31428050, 38.31429730, 38.31431400, 38.31432680, 38.31434370,
+            38.31436050, 38.31437420, 38.31439070, 38.31440710, 38.31442050, 38.31443710
+        ]
 
-        This method simulates a waypoint lap by executing a loop 10 times.
+        self.search_area_longitude = [
+            -76.54514240, -76.54504980, -76.54496000, -76.54514240, -76.54504980, -76.54496000,
+            -76.54486750, -76.54478030, -76.54469040, -76.54460060, -76.54451210, -76.54441950,
+            -76.54432700, -76.54424120, -76.54415400, -76.54406280, -76.54396620, -76.54399840,
+            -76.54408890, -76.54418350, -76.54427170, -76.54435990, -76.54445170, -76.54454130,
+            -76.54463080, -76.54472400, -76.54481290, -76.54490170, -76.54499350, -76.54508310
+        ]
 
-        :return: None
-        """
-        for x in range(10):
-            print("NOT IMPLEMENTED")
-
-    def search_area_waypoint(self):
-        """
-        Define a search area waypoint.
-
-        This method defines a search area waypoint.
-
-        :return: None
-        """
-        print("NOT IMPLEMENTED")
-
-    def trigger_camera(self, filename):
+    def trigger_camera(self,filename):
         """
         Trigger the camera to capture an image.
 
@@ -126,7 +123,7 @@ class CLASS:
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         return print("Drone Sensory Data Collected")
 
-    def geotag(self, filename, drone_sensory):
+    def geotag(filename, drone_sensory):
         """
         Geotag an image with sensory data.
 
@@ -146,6 +143,87 @@ class CLASS:
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[6]) + '\'', filename)
         return print("image geotagged")
 
+        #executing the tag command in ssh
+        p1 = multiprocessing.process(target = subprocess.run(tagPYRCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
+        p2 = multiprocessing.process(target = subprocess.run(tagLatCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
+        p3 = multiprocessing.process(target = subprocess.run(tagLongCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
+        p4 = multiprocessing.process(target = subprocess.run(tagAltCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
+        
+
+        p1.start()
+        p2.start()
+        p3.start()
+        p4.start()
+        
+        p1.join()
+        p2.join()
+        p3.join()
+        p4.join()
+        print("Geotagging image is finished\n")
+
+    def curr_waypoint_number(self):
+        """
+        Get the current waypoint number.
+
+        This method retrieves the current waypoint number from the UAS.
+
+        :return: The current waypoint number.
+        """
+        return vehicle.command.next - 1
+
+    def next_waypoint_number(self):
+        """
+        Get the next waypoint number.
+        
+        This method retrieves the next waypoint number from the UAS.
+
+        :return: The next waypoint number.
+        """
+        return vehicle.command.next
+
+    def waypoint_reached (latitude_deg, longitude_deg):
+
+        #convert from degree to radian
+        def toRadian(degree):
+            pi = math.pi
+            return degree * (pi / 180)
+        
+        #using haversine formula to calculate distance between two coordinates
+        def haversine(lon1, lat1):
+            curr_location = UAS.location.global_relative_frame
+            lat1 = toRadian(lat1)
+            lon1 = toRadian(lon1)
+            lat2 = toRadian(curr_location.latitude)
+            lon2 = toRadian(curr_location.longitude)
+
+            diff_lat = lat2 - lat1
+            diff_lon = lon2 - lon1
+            # feet conversion * earth radius * something
+            return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
+
+        #distance between 2 points retuirn value in feet    
+        distance = haversine(latitude_deg,longitude_deg)
+
+        #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
+        while(distance > 7.5):
+            #distance between 2 points retuirn value in feet    
+            distance = haversine(latitude_deg,longitude_deg)            
+            print("HAS NOT REACHED WAYPOINT YET")
+            time.sleep(.5)
+
+        return print("REACHED WAYPOINT")
+
+    def waypoint_lap(self, waypoint_array):
+        """
+        Simulate a waypoint lap.
+
+        This method simulates a waypoint lap by executing a loop 10 times.
+
+        :return: None
+        """
+        for x in range(10):
+            print("NOT IMPLEMENTED")
+
     def deliver_payload(self, servo_x, longitude, latitude):
         """
         Deliver payload to a target.
@@ -157,22 +235,35 @@ class CLASS:
         """
         return print("NOT IMPLEMENTED")
 
-    def curr_waypoint_number(self):
+    def search_area_waypoint(self):
         """
-        Get the current waypoint number.
+        Define a search area waypoint.
 
-        This method retrieves the current waypoint number from the UAS.
+        This method defines a search area waypoint.
 
-        :return: The current waypoint number.
+        :return: None
         """
-        return self.vehicle.command.next - 1
+        for x in range(len(search_area_latitude)):
+            #go to wp
+            print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
+            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],alt)
+            #call the waypoint reached
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
+            #get attitide data
+            p1 = multiprocessing.Process(target=self.attitude())
+            #take image
+            p2 = multiprocessing.Process(targert=self.trigger_camera(f"IMAGE{x}.jpg"))
+            #start the execution and wait 
+            p1.start()
+            p2.start()
+            p1.join()
+            p2.join()
+            #geotag
+            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", drone_sensory))
+            p3.start()
 
-    def next_waypoint_number(self):
-        """
-        Get the next waypoint number.
-        
-        This method retrieves the next waypoint number from the UAS.
+        return print("UAS COMPLETED SEARCH THE AREA")
 
-        :return: The next waypoint number.
-        """
-        return self.vehicle.command.next
+if __name__ == '__main__':
+    pass
+    

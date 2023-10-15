@@ -6,9 +6,10 @@ alt = 75
 
 
 #usb(Pi) to micro usb (Pixhawk)
-connection_string = "/dev/ttyACM0"
+#connection_string = "/dev/ttyACM0"
+connection_string = 'COM7'
 #baud rate
-baud_rate = 921600
+baud_rate = 57600
 
 #connecting to UAS
 print("Connecting to UAS")
@@ -21,7 +22,7 @@ while not vehicle.armed:
     time.sleep(1)
 print("DRONE IS ARMED")
 
-VehicleModE("GUIDED")
+VehicleMode("GUIDED")
 #checking the UAS mode wp start the script
 
 print(f"GOING TO WAYPOINT: {0}") 

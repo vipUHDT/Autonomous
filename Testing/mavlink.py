@@ -56,7 +56,7 @@ for x in range(2):
         
     )
 
-    UAS.send(command1)
+    #UAS.send(command1)
     
     # # Wait for the COMMAND_ACK
     # while True:
