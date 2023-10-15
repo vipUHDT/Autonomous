@@ -169,7 +169,7 @@ class CLASS:
 
         :return: The current waypoint number.
         """
-        return vehicle.command.next - 1
+        return UAS.command.next - 1
 
     def next_waypoint_number(self):
         """
@@ -179,27 +179,27 @@ class CLASS:
 
         :return: The next waypoint number.
         """
-        return vehicle.command.next
+        return UAS.command.next
 
-    def waypoint_reached (latitude_deg, longitude_deg):
+    #convert from degree to radian
+    def toRadian(self, degree):
+        pi = math.pi
+        return degree * (pi / 180)
 
-        #convert from degree to radian
-        def toRadian(degree):
-            pi = math.pi
-            return degree * (pi / 180)
-        
-        #using haversine formula to calculate distance between two coordinates
-        def haversine(lon1, lat1):
-            curr_location = UAS.location.global_relative_frame
-            lat1 = toRadian(lat1)
-            lon1 = toRadian(lon1)
-            lat2 = toRadian(curr_location.latitude)
-            lon2 = toRadian(curr_location.longitude)
+    #using haversine formula to calculate distance between two coordinates
+    def haversine(self, lon1, lat1):
+        curr_location = UAS.location.global_relative_frame
+        lat1 = toRadian(lat1)
+        lon1 = toRadian(lon1)
+        lat2 = toRadian(curr_location.latitude)
+        lon2 = toRadian(curr_location.longitude)
 
-            diff_lat = lat2 - lat1
-            diff_lon = lon2 - lon1
-            # feet conversion * earth radius * something
-            return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
+        diff_lat = lat2 - lat1
+        diff_lon = lon2 - lon1
+        # feet conversion * earth radius * something
+        return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
+
+    def waypoint_reached (self, atitude_deg, longitude_deg):
 
         #distance between 2 points retuirn value in feet    
         distance = haversine(latitude_deg,longitude_deg)
@@ -207,7 +207,7 @@ class CLASS:
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
         while(distance > 7.5):
             #distance between 2 points retuirn value in feet    
-            distance = haversine(latitude_deg,longitude_deg)            
+            distance = self.haversine(latitude_deg,longitude_deg)            
             print("HAS NOT REACHED WAYPOINT YET")
             time.sleep(.5)
 
