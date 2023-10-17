@@ -264,6 +264,9 @@ class CLASS:
 
         return print("UAS COMPLETED SEARCH THE AREA")
 
+    def RTL_checker():
+        return print("Not yet implemented")
+
 if __name__ == '__main__':
     pass
     
