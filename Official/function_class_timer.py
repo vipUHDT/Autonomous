@@ -19,19 +19,39 @@ class CLASS:
         """
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        self.vehicle = connect(self.connection_string, baud=57600, wait_ready=True)
+        #self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        #self.vehicle = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
         print('Connecting MavLink')
-        self.UAS = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        #self.UAS = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         print('Connecting to mavlink')
 
         #connect the camera
-        self.camera = gp.Camera()
-        self.camera.init()
+        camera = gp.Camera()
+        camera.init
         print('Camera Connected')
+        
+        print('CREATING IMAGE DIRECTORY')
+        image_dir = f'image_{time.ctime(time.time())}'
+        print(f'MADE DIRECTORY {image_dir}')
+        os.mkdir(image_dir)
+        os.chdir(str(image_dir))
+        print(f'MOVED TO {image_dir} DIRECTORY')
+        print("CREATING TEST DATA FILE")
+        with open('Data_log.txt', "a") as file:
+                file.write("Time Log:\n")
+        
+        #file variable
+        self.attitude_average = []
+        self.deliver_payload_average = []
+        self.geotag_average = []
+        self.haversine_average = []
+        self.search_area_waypoint_average = []
+        self.subprocess_execute_average = []
+        self.trigger_camera_average = []
+        self.waypoint_lap_average = []
 
         #declaring variable
         self.pitch = 0
@@ -42,7 +62,7 @@ class CLASS:
         self.alt = 0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
-        self.filename = f"image{self.image_number}"
+        self.filename = f"image"
 
         self.search_area_latitude = [
             38.31455510, 38.31453830, 38.31452150, 38.31455510, 38.31453830, 38.31452150,
@@ -60,7 +80,7 @@ class CLASS:
             -76.54463080, -76.54472400, -76.54481290, -76.54490170, -76.54499350, -76.54508310
         ]
 
-    def trigger_camera(self,filename):
+    def trigger_camera(self):
         """
         Trigger the camera to capture an image.
 
@@ -69,12 +89,17 @@ class CLASS:
         :param filename: The filename to use for the captured image.
         :return: None
         """
-        print(filename)
-        cmd = ('gphoto2', '--capture-image-and-download', '--filename', filename)
+        start = time.time()
+        print(f'image{self.image_number} IS BEING TAKEN')
+        cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
         #executing the trigger command in ssh
-        result2 = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.image_number += 1
-        return print('Image Captured \n')
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(f'Image{self.image_number} Captured \n')
+        end = time.time()
+        difference = end - start
+        self.trigger_camera_average.append(difference)
+
+        
 
     def attitude(self):
         """
@@ -85,6 +110,7 @@ class CLASS:
 
         :return: None
         """
+        start = time.time()
         # Setting the variable with gps coordinates, yaw pitch and roll
         attitude = self.vehicle.attitude
         attitude = str(attitude)
@@ -121,9 +147,22 @@ class CLASS:
         self.lon = str(self.lon)
         self.alt = str(self.alt)
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
-        return print("Drone Sensory Data Collected")
+        end = time.time()
+        difference = end - start
+        self.attitude_average.append(difference)
 
-    def geotag(filename, drone_sensory):
+
+        return print("Drone Sensory Data Collected")
+    
+    def subprocess_execute(self, command):
+            start = time.time()
+            subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            end = time.time()
+            difference = end - start
+            self.subprocess_execute_average.append(difference)
+
+            
+    def geotag(self):
         """
         Geotag an image with sensory data.
 
@@ -134,20 +173,25 @@ class CLASS:
         :param drone_sensory: The drone sensory data.
         :return: None
         """
+        start = time.time()
         # Geotagging photo with the attitude and GPS coordinate
         pyr = ('pitch:' + str(self.drone_sensory[0]) + ' yaw:' + str(self.drone_sensory[2]) + ' roll:' + str(self.drone_sensory[1]))
         print(pyr)
-        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), filename)
-        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[4]) + '\'', filename)
-        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[5]) + '\'', filename)
-        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[6]) + '\'', filename)
-        return print("image geotagged")
-
+        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), self.filename + str(self.image_number))
+        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
+        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
+        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
+        '''
         #executing the tag command in ssh
-        p1 = multiprocessing.process(target = subprocess.run(tagPYRCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
-        p2 = multiprocessing.process(target = subprocess.run(tagLatCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
-        p3 = multiprocessing.process(target = subprocess.run(tagLongCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
-        p4 = multiprocessing.process(target = subprocess.run(tagAltCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
+        subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        '''        
+        p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
+        p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
+        p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
+        p4 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_alt_command,))
         
 
         p1.start()
@@ -159,7 +203,13 @@ class CLASS:
         p2.join()
         p3.join()
         p4.join()
-        print("Geotagging image is finished\n")
+
+        self.image_number += 1
+        end = time.time()
+        difference = end - start
+
+        self.geotag_average.append(difference)
+        return print(f"{self.filename + str(self.image_number-1)} geotagged")
 
     def curr_waypoint_number(self):
         """
@@ -188,6 +238,7 @@ class CLASS:
 
     #using haversine formula to calculate distance between two coordinates
     def haversine(self, lon1, lat1):
+        start = time.time()
         curr_location = UAS.location.global_relative_frame
         lat1 = toRadian(lat1)
         lon1 = toRadian(lon1)
@@ -196,10 +247,15 @@ class CLASS:
 
         diff_lat = lat2 - lat1
         diff_lon = lon2 - lon1
+
+        end = time.time()
+        difference = end - start
+
+        self.haversine_average.append(difference)
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
-    def waypoint_reached (self, atitude_deg, latitude_deg, longitude_deg):
+    def waypoint_reached (self, atitude_deg, longitude_deg):
 
         #distance between 2 points retuirn value in feet    
         distance = haversine(latitude_deg,longitude_deg)
@@ -211,7 +267,7 @@ class CLASS:
             print("HAS NOT REACHED WAYPOINT YET")
             time.sleep(.5)
 
-        return True
+        return print("REACHED WAYPOINT")
 
     def waypoint_lap(self, waypoint_array):
         """
@@ -221,10 +277,17 @@ class CLASS:
 
         :return: None
         """
+        start = time.time()
         for x in range(10):
             print("NOT IMPLEMENTED")
+            
+        end = time.time()
+        difference = end - start
 
-    def deliver_payload(self, servo_x, latitude, longitude):
+        self.waypoint_lap_average.append(difference)
+
+
+    def deliver_payload(self, servo_x, longitude, latitude):
         """
         Deliver payload to a target.
 
@@ -233,6 +296,16 @@ class CLASS:
         :param servo_x: The servo number to use for payload delivery.
         :return: None
         """
+        start = time.time()
+
+        
+        #ENTER CODE HERE
+        
+        end = time.time()
+        difference = end - start
+        with open('Data_log.txt', 'a') as file:
+            file.write(f'deliver_payload {servo_x}: {difference:.4f} seconds\n')
+
         return print("NOT IMPLEMENTED")
 
     def search_area_waypoint(self):
@@ -243,11 +316,11 @@ class CLASS:
 
         :return: None
         """
+        start = time.time()
         for x in range(len(search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
             location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],alt)
-            UAS.simple_goto(location)
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
@@ -262,11 +335,53 @@ class CLASS:
             #geotag
             p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", drone_sensory))
             p3.start()
+        end = time.time()
+        difference = end - start
+
+        self.deliver_payload_average.append(difference)
 
         return print("UAS COMPLETED SEARCH THE AREA")
 
+    def avg(self, arr):
+        if len(arr) == 0:
+                return 0  # Avoid division by zero for an empty array
+
+        total = sum(arr)
+        average = total / len(arr)
+        return average
+        
+    def average(self):
+            
+        avg_attitude = self.avg(self.attitude_average)
+        avg_deliver_payload = self.avg(self.deliver_payload_average)
+        avg_geotag = self.avg(self.geotag_average)
+        avg_haversine = self.avg(self.haversine_average)
+        avg_search_area_waypoint = self.avg(self.search_area_waypoint_average)
+        avg_subprocess_execute = self.avg(self.subprocess_execute_average)
+        avg_trigger_camera = self.avg(self.trigger_camera_average)
+        avg_waypoint_lap = self.avg(self.waypoint_lap_average)
+            
+        data_averages = [
+            ("attitude", self.attitude_average, avg_attitude),
+            ("deliver_payload", self.deliver_payload_average, avg_deliver_payload),
+            ("geotag", self.geotag_average, avg_geotag),
+            ("haversine", self.haversine_average, avg_haversine),
+            ("search_area_waypoint", self.search_area_waypoint_average, avg_search_area_waypoint),
+            ("subprocess_execute", self.subprocess_execute_average, avg_subprocess_execute),
+            ("trigger_camera", self.trigger_camera_average, avg_trigger_camera),
+            ("waypoint_lap", self.waypoint_lap_average, avg_waypoint_lap)
+        ]
+        with open('Data_log.txt', 'a') as file:
+                for data_name, data_values, data_average in data_averages:
+                        file.write(f"{data_name}: {data_values}\n")
+                        file.write(f"{data_name} average: {data_average} seconds\n")
+                        
     def RTL_checker():
+            
         return print("Not yet implemented")
+
+        
+
 
 if __name__ == '__main__':
     pass
