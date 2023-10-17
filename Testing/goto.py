@@ -25,7 +25,7 @@ print("DRONE IS ARMED")
 VehicleMode("GUIDED")
 #checking the UAS mode wp start the script
 
-print(f"GOING TO WAYPOINT: {0}") 
+print(f"GOING TO SEARCH AREA WAYPOINT: {0}") 
 location = LocationGlobal(longitude[0],latitude[0],alt)
 vehicle.simple_goto(location)
 print(f"GOING TO WAYPOINT: {1}") 

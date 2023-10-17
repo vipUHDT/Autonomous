@@ -3,10 +3,11 @@ import os
 import math
 import multiprocessing
 import subprocess
-import gphoto2 as gp
-import exiftool
+#import gphoto2 as gp
+#import exiftool
 from pymavlink import mavutil
-from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+#from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+from array import array
 
 class CLASS:
     def __init__(self):
@@ -29,9 +30,9 @@ class CLASS:
         print('Connecting to mavlink')
 
         #connect the camera
-        camera = gp.Camera()
-        camera.init
-        print('Camera Connected')
+        # camera = gp.Camera()
+        # camera.init
+        # print('Camera Connected')
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -43,7 +44,7 @@ class CLASS:
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
         
-        #file variable
+        # writing file variable
         self.attitude_average = []
         self.deliver_payload_average = []
         self.geotag_average = []
@@ -63,7 +64,10 @@ class CLASS:
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.filename = f"image"
+        self.waypoint_lap_latitude = []
+        self.waypoint_lap_longitude = []
 
+        #predefined search area value
         self.search_area_latitude = [
             38.31455510, 38.31453830, 38.31452150, 38.31455510, 38.31453830, 38.31452150,
             38.31450570, 38.31448990, 38.31447520, 38.31445830, 38.31444260, 38.31442890,
@@ -79,6 +83,23 @@ class CLASS:
             -76.54408890, -76.54418350, -76.54427170, -76.54435990, -76.54445170, -76.54454130,
             -76.54463080, -76.54472400, -76.54481290, -76.54490170, -76.54499350, -76.54508310
         ]
+
+        user_waypoint_input()
+        while True:
+            try:
+                response = int(input("IS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                if response in [1, 2]:
+                    if (response ==2):
+                        user_waypoint_input()
+                    else:
+                        break
+                else:
+                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+            except ValueError as e:
+                print(e)
+
+
 
     def trigger_camera(self):
         """
@@ -98,8 +119,6 @@ class CLASS:
         end = time.time()
         difference = end - start
         self.trigger_camera_average.append(difference)
-
-        
 
     def attitude(self):
         """
@@ -160,8 +179,7 @@ class CLASS:
             end = time.time()
             difference = end - start
             self.subprocess_execute_average.append(difference)
-
-            
+          
     def geotag(self):
         """
         Geotag an image with sensory data.
@@ -269,7 +287,7 @@ class CLASS:
 
         return print("REACHED WAYPOINT")
 
-    def waypoint_lap(self, waypoint_array):
+    def waypoint_lap(self, waypoint_lap_latitude,waypoint_lap_longitude):
         """
         Simulate a waypoint lap.
 
@@ -286,7 +304,53 @@ class CLASS:
 
         self.waypoint_lap_average.append(difference)
 
+    def user_waypoint_input(self):
+        # Ask for the number of coordinates and create a latitude and longitude array
+        while 1:
+            # Check for non-integer value
+            try:
+                number_of_coordinates = int(input("How many coordinates?\n"))
+                break
+            except ValueError:
+                print("Enter an integer")
 
+        waypoint_lap_latitude  = array('i', [0] * number_of_coordinates)
+        waypoint_lap_longitude = array('i', [0] * number_of_coordinates)
+
+        # Ask for longitude and latitude coordinates and put them in their respective arrays
+        for i in range(number_of_coordinates):
+            while 1:
+                # Check for non-integer values
+                try:
+                    waypoint_lap_latitude [i] = int(input(f"Enter latitude {i + 1}:\n"))
+                    break
+                except ValueError:
+                    print("Coordinate must be an integer")
+
+            while 1:
+                # Check for non-integer values
+                try:
+                    waypoint_lap_longitude[i] = int(input(f"Enter longitude {i + 1}:\n"))
+                    break
+                except ValueError:
+                    print("Coordinate must be an integer")
+
+        # Print the coordinates in the array
+        print("\nLatitudes entered:")
+        for i in range(number_of_coordinates):
+            if (i == number_of_coordinates-1):
+                print(waypoint_lap_latitude [i])
+            else:
+                print(waypoint_lap_latitude [i], end=", ")
+            
+
+        print("\nLongitudes entered:")
+        for i in range(number_of_coordinates):
+            if (i == number_of_coordinates-1):
+                print(waypoint_lap_longitude[i])
+            else:
+                print(waypoint_lap_longitude[i], end=", ") 
+    
     def deliver_payload(self, servo_x, longitude, latitude):
         """
         Deliver payload to a target.

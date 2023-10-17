@@ -10,15 +10,15 @@ def user_waypoint_input():
         except ValueError:
             print("Enter an integer")
 
-    latitude_array = array('i', [0] * number_of_coordinates)
-    longitude_array = array('i', [0] * number_of_coordinates)
+    waypoint_lap_latitude  = array('i', [0] * number_of_coordinates)
+    waypoint_lap_longitude = array('i', [0] * number_of_coordinates)
 
     # Ask for longitude and latitude coordinates and put them in their respective arrays
     for i in range(number_of_coordinates):
         while 1:
             # Check for non-integer values
             try:
-                latitude_array[i] = int(input(f"Enter latitude {i + 1}:\n"))
+                waypoint_lap_latitude [i] = int(input(f"Enter latitude {i + 1}:\n"))
                 break
             except ValueError:
                 print("Coordinate must be an integer")
@@ -26,7 +26,7 @@ def user_waypoint_input():
         while 1:
             # Check for non-integer values
             try:
-                longitude_array[i] = int(input(f"Enter longitude {i + 1}:\n"))
+                waypoint_lap_longitude[i] = int(input(f"Enter longitude {i + 1}:\n"))
                 break
             except ValueError:
                 print("Coordinate must be an integer")
@@ -35,16 +35,32 @@ def user_waypoint_input():
     print("\nLatitudes entered:")
     for i in range(number_of_coordinates):
         if (i == number_of_coordinates-1):
-            print(latitude_array[i])
+            print(waypoint_lap_latitude [i])
         else:
-            print(latitude_array[i], end=", ")
+            print(waypoint_lap_latitude [i], end=", ")
         
 
     print("\nLongitudes entered:")
     for i in range(number_of_coordinates):
         if (i == number_of_coordinates-1):
-            print(longitude_array[i])
+            print(waypoint_lap_longitude[i], "\n")
         else:
-            print(longitude_array[i], end=", ") 
+            print(waypoint_lap_longitude[i], end=", ") 
 
 user_waypoint_input()
+while True:
+    try:
+        response = int(input("IS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+        if response in [1, 2]:
+            if (response ==2):
+                user_waypoint_input()
+            else:
+                break
+        else:
+            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+    except ValueError as e:
+        print(e)
+
+
+
