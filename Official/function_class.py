@@ -189,6 +189,10 @@ class CLASS:
         """
         return UAS.command.next
 
+    def subprocess_execute(self, command):
+        subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+
     #convert from degree to radian
     def toRadian(self, degree):
         pi = math.pi
