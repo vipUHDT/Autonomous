@@ -143,6 +143,14 @@ class CLASS:
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[6]) + '\'', filename)
         return print("image geotagged")
 
+        '''
+        #executing the tag command in ssh
+        subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        ''' 
+
         #executing the tag command in ssh
         p1 = multiprocessing.process(target = subprocess.run(tagPYRCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
         p2 = multiprocessing.process(target = subprocess.run(tagLatCommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE))
