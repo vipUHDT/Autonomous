@@ -211,7 +211,7 @@ class CLASS:
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
-    def waypoint_reached (self, atitude_deg, latitude_deg, longitude_deg):
+    def waypoint_reached (self, latitude_deg, longitude_deg):
 
         #distance between 2 points retuirn value in feet    
         distance = haversine(latitude_deg,longitude_deg)
@@ -222,7 +222,7 @@ class CLASS:
             distance = self.haversine(latitude_deg,longitude_deg)            
             print("HAS NOT REACHED WAYPOINT YET")
             time.sleep(.5)
-
+        print("WAYPOINT REACHED")
         return True
 
     def waypoint_lap(self, waypoint_array):
@@ -271,7 +271,7 @@ class CLASS:
             p2.start()
             p1.join()
             p2.join()
-            #geotag
+            #geotag background
             p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", drone_sensory))
             p3.start()
 
@@ -279,6 +279,19 @@ class CLASS:
 
     def RTL_checker():
         return print("Not yet implemented")
+        ##RTL get intialize
+        #wait for operator to toggle switch back to auto
+        #
+    
+    def RTL():
+        print(f"RETURNING TO LAUNCH") 
+        location = LocationGlobal(self.search_area_latitude[38.315339],self.search_area_longitude[-76.548108],alt)
+        UAS.simple_goto(location)
+
+    def KAMIKAZE():
+        #send signal to relay to kill drone
+        return print("万歳")
+
 
 if __name__ == '__main__':
     pass

@@ -457,13 +457,16 @@ class CLASS:
                         file.write(f"{data_name} average: {data_average} seconds\n")
                         file.write(f"{data_name} sum: {data_sum} seconds\n\n")
                         
-    def RTL_checker():
-            
-        return print("Not yet implemented")
+    def RTL():
+        print(f"RETURNING TO LAUNCH") 
+        location = LocationGlobal(self.search_area_latitude[38.315339],self.search_area_longitude[-76.548108],alt)
+        UAS.simple_goto(location)
+
+    def KAMIKAZE():
+        #send signal to relay to kill drone
+        return print("万歳")
 
         
-
-
 if __name__ == '__main__':
     pass
     

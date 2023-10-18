@@ -5,7 +5,7 @@ def user_waypoint_input():
     while 1:
         # Check for non-integer value
         try:
-            number_of_coordinates = int(input("How many coordinates?\n"))
+            number_of_coordinates = int(input("万歳 How many coordinates?\n"))
             break
         except ValueError:
             print("Enter an integer")
