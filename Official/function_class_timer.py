@@ -3,10 +3,10 @@ import os
 import math
 import multiprocessing
 import subprocess
-#import gphoto2 as gp
-#import exiftool
+import gphoto2 as gp
+import exiftool
 from pymavlink import mavutil
-#from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
 
 class CLASS:
@@ -45,14 +45,14 @@ class CLASS:
                 file.write("Time Log:\n")
         
         # writing file variable
-        self.attitude_average = []
-        self.deliver_payload_average = []
-        self.geotag_average = []
-        self.haversine_average = []
-        self.search_area_waypoint_average = []
-        self.subprocess_execute_average = []
-        self.trigger_camera_average = []
-        self.waypoint_lap_average = []
+        self.attitude_time = []
+        self.deliver_payload_time = []
+        self.geotag_time = []
+        self.haversine_time = []
+        self.search_area_waypoint_time = []
+        self.subprocess_execute_time = []
+        self.trigger_camera_time = []
+        self.waypoint_lap_time = []
 
         #declaring variable
         self.pitch = 0
@@ -84,13 +84,13 @@ class CLASS:
             -76.54463080, -76.54472400, -76.54481290, -76.54490170, -76.54499350, -76.54508310
         ]
 
-        user_waypoint_input()
+        self.user_waypoint_input()
         while True:
             try:
-                response = int(input("IS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
                 if response in [1, 2]:
                     if (response ==2):
-                        user_waypoint_input()
+                        self.user_waypoint_input()
                     else:
                         break
                 else:
@@ -118,7 +118,7 @@ class CLASS:
         print(f'Image{self.image_number} Captured \n')
         end = time.time()
         difference = end - start
-        self.trigger_camera_average.append(difference)
+        self.trigger_camera_time.append(difference)
 
     def attitude(self):
         """
@@ -168,7 +168,7 @@ class CLASS:
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         end = time.time()
         difference = end - start
-        self.attitude_average.append(difference)
+        self.attitude_time.append(difference)
 
 
         return print("Drone Sensory Data Collected")
@@ -178,7 +178,7 @@ class CLASS:
             subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             end = time.time()
             difference = end - start
-            self.subprocess_execute_average.append(difference)
+            self.subprocess_execute_time.append(difference)
           
     def geotag(self):
         """
@@ -226,7 +226,7 @@ class CLASS:
         end = time.time()
         difference = end - start
 
-        self.geotag_average.append(difference)
+        self.geotag_time.append(difference)
         return print(f"{self.filename + str(self.image_number-1)} geotagged")
 
     def curr_waypoint_number(self):
@@ -269,7 +269,7 @@ class CLASS:
         end = time.time()
         difference = end - start
 
-        self.haversine_average.append(difference)
+        self.haversine_time.append(difference)
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
@@ -302,14 +302,14 @@ class CLASS:
         end = time.time()
         difference = end - start
 
-        self.waypoint_lap_average.append(difference)
+        self.waypoint_lap_time.append(difference)
 
     def user_waypoint_input(self):
         # Ask for the number of coordinates and create a latitude and longitude array
         while 1:
             # Check for non-integer value
             try:
-                number_of_coordinates = int(input("How many coordinates?\n"))
+                number_of_coordinates = int(input("\nHow many coordinates?\n"))
                 break
             except ValueError:
                 print("Enter an integer")
@@ -402,10 +402,16 @@ class CLASS:
         end = time.time()
         difference = end - start
 
-        self.deliver_payload_average.append(difference)
+        self.deliver_payload_time.append(difference)
 
         return print("UAS COMPLETED SEARCH THE AREA")
 
+    def sum(self, arr):
+        sum = 0
+        for value in arr:
+            sum += value
+        return sum
+    
     def avg(self, arr):
         if len(arr) == 0:
                 return 0  # Avoid division by zero for an empty array
@@ -415,30 +421,41 @@ class CLASS:
         return average
         
     def average(self):
+        #average calculation
+        avg_attitude = self.avg(self.attitude_time)
+        avg_deliver_payload = self.avg(self.deliver_payload_time)
+        avg_geotag = self.avg(self.geotag_time)
+        avg_haversine = self.avg(self.haversine_time)
+        avg_search_area_waypoint = self.avg(self.search_area_waypoint_time)
+        avg_subprocess_execute = self.avg(self.subprocess_execute_time)
+        avg_trigger_camera = self.avg(self.trigger_camera_time)
+        avg_waypoint_lap = self.avg(self.waypoint_lap_time)
+        #sum calcualtion
+        sum_attitude = self.sum(self.attitude_time)
+        sum_deliver_payload = self.sum(self.deliver_payload_time)
+        sum_geotag = self.sum(self.geotag_time)
+        sum_haversine = self.sum(self.haversine_time)
+        sum_search_area_waypoint = self.sum(self.search_area_waypoint_time)
+        sum_subprocess_execute = self.sum(self.subprocess_execute_time)
+        sum_trigger_camera = self.sum(self.trigger_camera_time)
+        sum_waypoint_lap = self.sum(self.waypoint_lap_time)
+
             
-        avg_attitude = self.avg(self.attitude_average)
-        avg_deliver_payload = self.avg(self.deliver_payload_average)
-        avg_geotag = self.avg(self.geotag_average)
-        avg_haversine = self.avg(self.haversine_average)
-        avg_search_area_waypoint = self.avg(self.search_area_waypoint_average)
-        avg_subprocess_execute = self.avg(self.subprocess_execute_average)
-        avg_trigger_camera = self.avg(self.trigger_camera_average)
-        avg_waypoint_lap = self.avg(self.waypoint_lap_average)
-            
-        data_averages = [
-            ("attitude", self.attitude_average, avg_attitude),
-            ("deliver_payload", self.deliver_payload_average, avg_deliver_payload),
-            ("geotag", self.geotag_average, avg_geotag),
-            ("haversine", self.haversine_average, avg_haversine),
-            ("search_area_waypoint", self.search_area_waypoint_average, avg_search_area_waypoint),
-            ("subprocess_execute", self.subprocess_execute_average, avg_subprocess_execute),
-            ("trigger_camera", self.trigger_camera_average, avg_trigger_camera),
-            ("waypoint_lap", self.waypoint_lap_average, avg_waypoint_lap)
+        data_averages_and_time = [
+            ("attitude", self.attitude_time, avg_attitude, sum_attitude),
+            ("deliver_payload", self.deliver_payload_time, avg_deliver_payload,sum_deliver_payload),
+            ("geotag", self.geotag_time, avg_geotag,sum_geotag),
+            ("haversine", self.haversine_time, avg_haversine,sum_haversine),
+            ("search_area_waypoint", self.search_area_waypoint_time, avg_search_area_waypoint,sum_search_area_waypoint),
+            ("subprocess_execute", self.subprocess_execute_time, avg_subprocess_execute,sum_subprocess_execute),
+            ("trigger_camera", self.trigger_camera_time, avg_trigger_camera,sum_trigger_camera),
+            ("waypoint_lap", self.waypoint_lap_time, avg_waypoint_lap,sum_waypoint_lap)
         ]
         with open('Data_log.txt', 'a') as file:
-                for data_name, data_values, data_average in data_averages:
+                for data_name, data_values, data_average, data_sum in data_averages_and_time:
                         file.write(f"{data_name}: {data_values}\n")
                         file.write(f"{data_name} average: {data_average} seconds\n")
+                        file.write(f"{data_name} sum: {data_sum} seconds\n\n")
                         
     def RTL_checker():
             
