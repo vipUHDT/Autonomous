@@ -3,7 +3,7 @@ import os
 import math
 import multiprocessing
 import subprocess
-#import gphoto2 as gp ###NOT WORKING ON JETSON
+import gphoto2 as gp 
 import exiftool
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
@@ -30,8 +30,10 @@ class CLASS:
         print('Connecting to mavlink')
 
         #connect the camera
-        self.subprocess('"gphoto2", "--auto-connect"')
-        # print('Camera Connected')
+        #self.subprocess('"gphoto2", "--auto-connect"')
+        camera = gp.Camera()
+        camera.init
+        print('Camera Connected')
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
