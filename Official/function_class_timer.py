@@ -21,12 +21,12 @@ class CLASS:
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         #self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        #self.vehicle = connect(self.connection_string, baud=57600, wait_ready=True)
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
         print('Connecting MavLink')
-        #self.UAS = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        # self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         print('Connecting to mavlink')
 
         #connect the camera
@@ -55,7 +55,7 @@ class CLASS:
         self.trigger_camera_time = []
         self.waypoint_lap_time = []
 
-        #declaring variable
+        #declaring initial variable
         self.pitch = 0
         self.roll = 0
         self.yaw = 0
@@ -64,6 +64,8 @@ class CLASS:
         self.alt = 0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
+        self.currWP_index = 0
+        self.lap = 0
         self.filename = f"image"
         self.waypoint_lap_latitude = []
         self.waypoint_lap_longitude = []
@@ -288,22 +290,36 @@ class CLASS:
 
         return print("REACHED WAYPOINT")
 
-    def waypoint_lap(self, waypoint_lap_latitude,waypoint_lap_longitude):
-        """
-        Simulate a waypoint lap.
+    def RTL_stat( self ):
+        return self.UAS_dk.mode == VehicleMode("RTL")
+    
+    def waypoint_lap( self, waypoint_lap_latitude,waypoint_lap_longitude ):
+        
+        nextWP_index = self.currWP_index + 1
+        storedWP = None
+        nextWP = LocationGlobal( waypoint_lap_latitude[ nextWP_index], waypoint_lap_longitude[nextWP_index], self.alt )
 
-        This method simulates a waypoint lap by executing a loop 10 times.
+        if self.RTL_stat():
+            if storedWP is None:
+                storedWP = LocationGlobal( waypoint_lap_latitude[self.currWP_index], waypoint_lap_longitude[self.currWP_index], self.alt )
 
-        :return: None
-        """
-        start = time.time()
-        for x in range(10):
-            print("NOT IMPLEMENTED")
-            
-        end = time.time()
-        difference = end - start
+            while self.RTL_stat():
+                pass
 
-        self.waypoint_lap_time.append(difference)
+            self.UAS_dk.simple_goto( storedWP )
+
+        else:
+                
+            self.UAS_dk.simple_goto( nextWP )
+
+            nextWP_index += 1
+            self.currWP_index += 1
+
+            if nextWP_index == len( waypoint_lap_latitude ):
+                self.currWP_index = 0
+                self.lap += 1
+
+        return f"Lap number {self.lap} is complete"
 
     def user_waypoint_input(self):
         # Ask for the number of coordinates and create a latitude and longitude array
@@ -385,7 +401,8 @@ class CLASS:
         for x in range(len(search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],alt)
+            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x], self.alt)
+            self.UAS_dk.simple_goto( location )
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
@@ -457,11 +474,6 @@ class CLASS:
                         file.write(f"{data_name}: {data_values}\n")
                         file.write(f"{data_name} average: {data_average} seconds\n")
                         file.write(f"{data_name} sum: {data_sum} seconds\n\n")
-                        
-    def RTL():
-        print(f"RETURNING TO LAUNCH") 
-        location = LocationGlobal(self.search_area_latitude[38.315339],self.search_area_longitude[-76.548108],alt)
-        UAS.simple_goto(location)
 
     def KAMIKAZE():
         #send signal to relay to kill drone
