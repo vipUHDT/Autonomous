@@ -1,0 +1,33 @@
+waypoint_lap( waypoints ):
+    lap = 0
+    currWP_index = 0
+    storedWP = None
+
+    while lap < 10:
+        if RTL_stat:
+            if storedWP is None:
+                storedWp = waypoints[ currWP_index ]
+
+            while RTL_stat:
+                fly until RTL disappears
+
+            fly_to_WP( storedWP )
+
+        
+
+        else:
+            fly_to_wp( waypoints[ currWP_index ] )
+
+            currWP += 1
+
+            if( currWP == len( waypoints ) ):
+            currWP = 0
+            lap += 1
+
+    return "lap is complete"
+
+RTL_stat ():
+    if( drone stat is RTL ):
+        return True
+
+

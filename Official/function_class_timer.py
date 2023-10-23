@@ -401,7 +401,8 @@ class CLASS:
         for x in range(len(search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],alt)
+            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
+            self.UAS_dk.simple_goto( location )
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
