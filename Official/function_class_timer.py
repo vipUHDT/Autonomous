@@ -368,8 +368,8 @@ class CLASS:
         
         end = time.time()
         difference = end - start
-        with open('Data_log.txt', 'a') as file:
-            file.write(f'deliver_payload {servo_x}: {difference:.4f} seconds\n')
+        self.deliver_payload_time.append(difference)
+
 
         return print("NOT IMPLEMENTED")
 
@@ -385,7 +385,7 @@ class CLASS:
         for x in range(len(search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],alt)
+            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
@@ -402,8 +402,7 @@ class CLASS:
             p3.start()
         end = time.time()
         difference = end - start
-
-        self.deliver_payload_time.append(difference)
+        self.search_area_waypoint_time.append(difference)
 
         return print("UAS COMPLETED SEARCH THE AREA")
 
