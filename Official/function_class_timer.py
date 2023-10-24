@@ -276,6 +276,9 @@ class CLASS:
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
+    def RTL_stat( self ):
+        return self.UAS_dk.mode == VehicleMode("RTL")
+    
     def waypoint_reached (self, latitude_deg, longitude_deg, index ):
 
         #distance between 2 points retuirn value in feet    
@@ -288,12 +291,12 @@ class CLASS:
                 while self.RTL_stat():
                     pass
 
-                self.UAS_dk.simple_goto(LocationGlobal( waypoint_lap_latitude[ index ], waypoint_lap_longitude[ index ], self.alt ))
-                self.waypoint_reached(waypoint_lap_latitude[ index ], waypoint_lap_longitude[ index ], index)
+                self.UAS_dk.simple_goto(LocationGlobal( self.waypoint_lap_latitude[ index ], self.waypoint_lap_longitude[ index ], self.alt ))
+                self.waypoint_reached( self.waypoint_lap_latitude[ index ], self.waypoint_lap_longitude[ index ], index)
                 break
-
+             
             #distance between 2 points retuirn value in feet    
-            distance = self.haversine(latitude_deg,longitude_deg)            
+            distance = self.haversine(latitude_deg, longitude_deg)            
             print("HAS NOT REACHED WAYPOINT YET")
             time.sleep(.5)
 
@@ -301,34 +304,35 @@ class CLASS:
         
         return True
 
-    def RTL_stat( self ):
-        return self.UAS_dk.mode == VehicleMode("RTL")
     
     def waypoint_lap( self ):
         
         nextWP_index = self.currWP_index + 1
         storedWP = None
-        nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index], self.waypoint_lap_longitude[nextWP_index], self.alt )
+        nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.alt )
 
-        if self.RTL_stat():
-            if storedWP is None:
-                storedWP = LocationGlobal( self.waypoint_lap_latitude[self.currWP_index], self.waypoint_lap_longitude[self.currWP_index], self.alt )
+        while self.currWP_index != len( self.waypoint_lap_latitude ):
+            if self.RTL_stat():
+                if storedWP is None:
+                    storedWP = LocationGlobal( self.waypoint_lap_latitude[ self.currWP_index ], self.waypoint_lap_longitude[ self.currWP_index ], self.alt )
 
-            while self.RTL_stat():
-                pass
+                while self.RTL_stat():
+                    pass
 
-            self.UAS_dk.simple_goto( storedWP )
+                self.UAS_dk.simple_goto( storedWP )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], nextWP_index )
 
-        else:
-                
-            self.UAS_dk.simple_goto( nextWP )
+            else:
+                    
+                self.UAS_dk.simple_goto( nextWP )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ], nextWP_index )
 
-            nextWP_index += 1
-            self.currWP_index += 1
+                nextWP_index += 1
+                self.currWP_index += 1
 
-            if nextWP_index == len( self.waypoint_lap_latitude ):
-                self.currWP_index = 0
-                self.lap += 1
+                if nextWP_index == len( self.waypoint_lap_latitude ):
+                    self.currWP_index = 0
+                    self.lap += 1
 
         return f"Lap number {self.lap} is complete"
 
