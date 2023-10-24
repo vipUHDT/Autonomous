@@ -276,32 +276,43 @@ class CLASS:
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
-    def waypoint_reached (self, atitude_deg, longitude_deg):
+    def waypoint_reached (self, latitude_deg, longitude_deg, index ):
 
         #distance between 2 points retuirn value in feet    
-        distance = haversine(latitude_deg,longitude_deg)
+        distance = self.haversine(latitude_deg,longitude_deg )
 
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
         while(distance > 7.5):
+            if(self.RTL_stat() == True):
+
+                while self.RTL_stat():
+                    pass
+
+                self.UAS_dk.simple_goto(LocationGlobal( waypoint_lap_latitude[ index ], waypoint_lap_longitude[ index ], self.alt ))
+                self.waypoint_reached(waypoint_lap_latitude[ index ], waypoint_lap_longitude[ index ], index)
+                break
+
             #distance between 2 points retuirn value in feet    
             distance = self.haversine(latitude_deg,longitude_deg)            
             print("HAS NOT REACHED WAYPOINT YET")
             time.sleep(.5)
 
-        return print("REACHED WAYPOINT")
+        print("REACHED WAYPOINT")
+        
+        return True
 
     def RTL_stat( self ):
         return self.UAS_dk.mode == VehicleMode("RTL")
     
-    def waypoint_lap( self, waypoint_lap_latitude,waypoint_lap_longitude ):
+    def waypoint_lap( self ):
         
         nextWP_index = self.currWP_index + 1
         storedWP = None
-        nextWP = LocationGlobal( waypoint_lap_latitude[ nextWP_index], waypoint_lap_longitude[nextWP_index], self.alt )
+        nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index], self.waypoint_lap_longitude[nextWP_index], self.alt )
 
         if self.RTL_stat():
             if storedWP is None:
-                storedWP = LocationGlobal( waypoint_lap_latitude[self.currWP_index], waypoint_lap_longitude[self.currWP_index], self.alt )
+                storedWP = LocationGlobal( self.waypoint_lap_latitude[self.currWP_index], self.waypoint_lap_longitude[self.currWP_index], self.alt )
 
             while self.RTL_stat():
                 pass
@@ -315,7 +326,7 @@ class CLASS:
             nextWP_index += 1
             self.currWP_index += 1
 
-            if nextWP_index == len( waypoint_lap_latitude ):
+            if nextWP_index == len( self.waypoint_lap_latitude ):
                 self.currWP_index = 0
                 self.lap += 1
 
