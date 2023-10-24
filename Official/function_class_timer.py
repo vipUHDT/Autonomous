@@ -103,7 +103,6 @@ class CLASS:
                 print(e)
 
 
-
     def trigger_camera(self):
         """
         Trigger the camera to capture an image.
@@ -232,25 +231,6 @@ class CLASS:
         self.geotag_time.append(difference)
         return print(f"{self.filename + str(self.image_number-1)} geotagged")
 
-    def curr_waypoint_number(self):
-        """
-        Get the current waypoint number.
-
-        This method retrieves the current waypoint number from the UAS.
-
-        :return: The current waypoint number.
-        """
-        return UAS.command.next - 1
-
-    def next_waypoint_number(self):
-        """
-        Get the next waypoint number.
-        
-        This method retrieves the next waypoint number from the UAS.
-
-        :return: The next waypoint number.
-        """
-        return UAS.command.next
 
     #convert from degree to radian
     def toRadian(self, degree):
@@ -272,9 +252,6 @@ class CLASS:
         self.haversine_time.append(difference)
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
-
-
-
 
     def waypoint_reached (self, latitude_deg, longitude_deg, index ):
 
@@ -416,7 +393,7 @@ class CLASS:
             location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
             self.UAS_dk.simple_goto( location )
             #call the waypoint reached
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], x)
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
