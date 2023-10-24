@@ -303,7 +303,7 @@ class CLASS:
             else:
                     
                 self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
 
                 nextWP_index += 1
                 self.currWP_index += 1
