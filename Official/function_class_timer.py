@@ -266,15 +266,15 @@ class CLASS:
         lat2 = toRadian(curr_location.latitude)
         lon2 = toRadian(curr_location.longitude)
 
-        diff_lat = lat2 - lat1
-        diff_lon = lon2 - lon1
-
         end = time.time()
         difference = end - start
 
         self.haversine_time.append(difference)
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
+
+
+
 
     def waypoint_reached (self, latitude_deg, longitude_deg, index ):
 
@@ -283,6 +283,7 @@ class CLASS:
 
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
         while(distance > 7.5):
+
             if(self.RTL_stat() == True):
 
                 while self.RTL_stat():
