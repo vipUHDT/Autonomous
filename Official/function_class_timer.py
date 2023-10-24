@@ -279,7 +279,7 @@ class CLASS:
     def RTL_stat( self ):
         return self.UAS_dk.mode == VehicleMode("RTL")
     
-    def waypoint_reached (self, latitude_deg, longitude_deg, index ):
+    def waypoint_reached (self, latitude_deg, longitude_deg ):
 
         #distance between 2 points retuirn value in feet    
         distance = self.haversine(latitude_deg,longitude_deg )
@@ -291,8 +291,8 @@ class CLASS:
                 while self.RTL_stat():
                     pass
 
-                self.UAS_dk.simple_goto(LocationGlobal( self.waypoint_lap_latitude[ index ], self.waypoint_lap_longitude[ index ], self.alt ))
-                self.waypoint_reached( self.waypoint_lap_latitude[ index ], self.waypoint_lap_longitude[ index ], index)
+                self.UAS_dk.simple_goto(LocationGlobal( latitude_deg, longitude_deg, self.alt ))
+                self.waypoint_reached( latitude_deg, longitude_deg )
                 break
              
             #distance between 2 points retuirn value in feet    
@@ -320,12 +320,12 @@ class CLASS:
                     pass
 
                 self.UAS_dk.simple_goto( storedWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], nextWP_index )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
 
             else:
                     
                 self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ], nextWP_index )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
 
                 nextWP_index += 1
                 self.currWP_index += 1
