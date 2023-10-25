@@ -102,7 +102,6 @@ class CLASS:
             except ValueError as e:
                 print(e)
 
-
     def trigger_camera(self):
         """
         Trigger the camera to capture an image.
@@ -115,8 +114,7 @@ class CLASS:
         start = time.time()
         print(f'image{self.image_number} IS BEING TAKEN')
         cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
-        #executing the trigger command in ssh
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.subprocess_execute(cmd)
         print(f'Image{self.image_number} Captured \n')
         end = time.time()
         difference = end - start
@@ -133,10 +131,10 @@ class CLASS:
         """
         start = time.time()
         # Setting the variable with gps coordinates, yaw pitch and roll
-        attitude = self.vehicle.attitude
+        attitude = self.UAS_dk.attitude
         attitude = str(attitude)
         # Getting the UAS location in long and lat
-        gps = self.vehicle.location.global_relative_frame
+        gps = self.UAS_dk.location.global_relative_frame
         gps = str(gps)
         # using split method to split string so we can get individual value of yaw, pitch, and roll
         attitude_split = attitude.split(",")
@@ -176,11 +174,20 @@ class CLASS:
         return print("Drone Sensory Data Collected")
     
     def subprocess_execute(self, command):
-            start = time.time()
-            subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            end = time.time()
-            difference = end - start
-            self.subprocess_execute_time.append(difference)
+        """
+        Execute a subprocess command with the provided arguments and record the execution time.
+
+        Args:
+            command (str): The subprocess command to execute.
+
+        Returns:
+            None
+        """
+        start = time.time()
+        subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        end = time.time()
+        difference = end - start
+        self.subprocess_execute_time.append(difference)
           
     def geotag(self):
         """
@@ -201,13 +208,14 @@ class CLASS:
         tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
         tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
-        '''
+        
         #executing the tag command in ssh
-        subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        '''        
+        # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                
+
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
@@ -231,16 +239,32 @@ class CLASS:
         self.geotag_time.append(difference)
         return print(f"{self.filename + str(self.image_number-1)} geotagged")
 
-
-    #convert from degree to radian
     def toRadian(self, degree):
+        """
+        Convert from degree to radian.
+
+        Args:
+            degree (float): The angle in degrees to be converted to radians.
+
+        Returns:
+            float: The equivalent angle in radians.
+        """
         pi = math.pi
         return degree * (pi / 180)
 
-    #using haversine formula to calculate distance between two coordinates
     def haversine(self, lon1, lat1):
+        """
+        Use the Haversine formula to calculate the distance between two coordinates.
+
+        Args:
+            lon1 (float): Longitude of the first coordinate.
+            lat1 (float): Latitude of the first coordinate.
+
+        Returns:
+            float: The distance between the two coordinates in meters.
+        """
         start = time.time()
-        curr_location = UAS.location.global_relative_frame
+        curr_location = self.UAS_dk.location.global_relative_frame
         lat1 = toRadian(lat1)
         lon1 = toRadian(lon1)
         lat2 = toRadian(curr_location.latitude)
@@ -254,10 +278,77 @@ class CLASS:
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
     def RTL_stat( self ):
+        """
+        Check if the UAS is in "Return to Launch" mode.
+
+        Returns:
+            bool: True if the UAS is in RTL mode, False otherwise.
+        """
         return self.UAS_dk.mode == VehicleMode("RTL")
+
+    def spline_command(self, latitude, longitude):
+        """
+        Define a spline command (not implemented).
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+
+        Returns:
+            None
+        """
+        return print("Not Implemented")
+
+    def waypoint_command(self, latitude, longitude):
+        """
+        Define a waypoint command (not implemented).
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+
+        Returns:
+            None
+        """
+        return print("Not Implemented")
+
+    def distance_command(self, latitude, longitude):
+        """
+        Define a distance command (not implemented).
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+
+        Returns:
+            None
+        """
+        return print("Not implemented")
+    
+    def servo_command(self, servo_x):
+        """
+        Activate a servo to deliver payload (not implemented).
+
+        Args:
+            servo_x (int): The servo number to be activated.
+
+        Returns:
+            None
+        """
+        return print("Not Implemented")
+
     
     def waypoint_reached (self, latitude_deg, longitude_deg ):
+        """
+        Check if the UAS has reached a specified waypoint.
 
+        Args:
+            latitude_deg (float): The latitude coordinate of the waypoint.
+            longitude_deg (float): The longitude coordinate of the waypoint.
+
+        Returns:
+            bool: True if the waypoint is reached, False otherwise.
+        """
         #distance between 2 points retuirn value in feet    
         distance = self.haversine(latitude_deg,longitude_deg )
 
@@ -284,7 +375,12 @@ class CLASS:
 
     
     def waypoint_lap( self ):
-        
+        """
+        Define a sequence of waypoints to be followed by the UAS in a lap.
+
+        Returns:
+            str: A message indicating lap completion.
+        """
         nextWP_index = self.currWP_index + 1
         storedWP = None
         nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.alt )
@@ -303,7 +399,7 @@ class CLASS:
             else:
                     
                 self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
 
                 nextWP_index += 1
                 self.currWP_index += 1
@@ -315,6 +411,12 @@ class CLASS:
         return f"Lap number {self.lap} is complete"
 
     def user_waypoint_input(self):
+        """
+        Allow the user to input a set of latitude and longitude coordinates for waypoints.
+
+        Returns:
+            None
+        """
         # Ask for the number of coordinates and create a latitude and longitude array
         while 1:
             # Check for non-integer value
@@ -363,12 +465,15 @@ class CLASS:
     
     def deliver_payload(self, servo_x, longitude, latitude):
         """
-        Deliver payload to a target.
+        Deliver a payload using a specified servo (not implemented).
 
-        This method activates servo x to to deliver payload
+        Args:
+            servo_x (int): The servo number to be activated.
+            longitude (float): The longitude coordinate.
+            latitude (float): The latitude coordinate.
 
-        :param servo_x: The servo number to use for payload delivery.
-        :return: None
+        Returns:
+            None
         """
         start = time.time()
 
@@ -417,12 +522,30 @@ class CLASS:
         return print("UAS COMPLETED SEARCH THE AREA")
 
     def sum(self, arr):
+        """
+        Calculate the sum of values in the input array.
+
+        Args:
+            arr (list): List of numeric values to be summed.
+
+        Returns:
+            float: The sum of values in the input list.
+        """
         sum = 0
         for value in arr:
             sum += value
         return sum
     
     def avg(self, arr):
+        """
+        Calculate the average of values in the input array.
+
+        Args:
+            arr (list): List of numeric values to calculate the average from.
+
+        Returns:
+            float: The average of values in the input list.
+        """
         if len(arr) == 0:
                 return 0  # Avoid division by zero for an empty array
 
@@ -430,7 +553,13 @@ class CLASS:
         average = total / len(arr)
         return average
         
-    def average(self):
+    def export(self):
+        """
+        Export, Calculate and record the average and sum of execution times for various methods.
+
+        Returns:
+            None
+        """
         #average calculation
         avg_attitude = self.avg(self.attitude_time)
         avg_deliver_payload = self.avg(self.deliver_payload_time)
@@ -468,6 +597,12 @@ class CLASS:
                         file.write(f"{data_name} sum: {data_sum} seconds\n\n")
 
     def KAMIKAZE():
+        """
+        Kills the UAS by completely cutting power to drone
+
+        Returns:
+            None
+        """
         #send signal to relay to kill drone
         print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⠤⠖⠛⣷⣶⣶⠿⢿⣿⣿⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
         print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡴⣾⣿⠋⠀⠀⠀⢾⣿⠏⠀⠀⠀⠀⠈⠛⠻⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
