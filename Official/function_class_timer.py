@@ -115,8 +115,7 @@ class CLASS:
         start = time.time()
         print(f'image{self.image_number} IS BEING TAKEN')
         cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
-        #executing the trigger command in ssh
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.subprocess_execute(cmd)
         print(f'Image{self.image_number} Captured \n')
         end = time.time()
         difference = end - start
@@ -133,10 +132,10 @@ class CLASS:
         """
         start = time.time()
         # Setting the variable with gps coordinates, yaw pitch and roll
-        attitude = self.vehicle.attitude
+        attitude = self.UAS_dk.attitude
         attitude = str(attitude)
         # Getting the UAS location in long and lat
-        gps = self.vehicle.location.global_relative_frame
+        gps = self.UAS_dk.location.global_relative_frame
         gps = str(gps)
         # using split method to split string so we can get individual value of yaw, pitch, and roll
         attitude_split = attitude.split(",")
@@ -201,13 +200,14 @@ class CLASS:
         tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
         tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
-        '''
+        
         #executing the tag command in ssh
-        subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        '''        
+        # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                
+
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
@@ -240,7 +240,7 @@ class CLASS:
     #using haversine formula to calculate distance between two coordinates
     def haversine(self, lon1, lat1):
         start = time.time()
-        curr_location = UAS.location.global_relative_frame
+        curr_location = self.UAS_dk.location.global_relative_frame
         lat1 = toRadian(lat1)
         lon1 = toRadian(lon1)
         lat2 = toRadian(curr_location.latitude)
@@ -255,6 +255,19 @@ class CLASS:
 
     def RTL_stat( self ):
         return self.UAS_dk.mode == VehicleMode("RTL")
+
+    def spline_command(self, latitude, longitude):
+        return print("Not Implemented")
+
+    def waypoint_command(self, latitude, longitude):
+        return print("Not Implemented")
+
+    def distance_command(self, latitude, longitude):
+        return print("Not implemented")
+    
+    def servo_command(self, servo_x):
+        return print("Not Implemented")
+
     
     def waypoint_reached (self, latitude_deg, longitude_deg ):
 
@@ -303,7 +316,7 @@ class CLASS:
             else:
                     
                 self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
 
                 nextWP_index += 1
                 self.currWP_index += 1
