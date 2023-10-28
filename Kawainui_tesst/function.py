@@ -68,23 +68,23 @@ class CLASS:
         self.lap = 0
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4006278, 21.4009749, 21.4008975, 21.400504
+            21.4002232, 21.4004455, 21.4007302, 21.4004929
         ]
         self.waypoint_lap_longitude = [
-            -157.7650452, -157.7647018, -157.7642217, -157.7643907
+            -157.7645463, -157.7646348, -157.7639616, -157.7637658
         ]
 
         #predefined search area value for Kawainui test
         self.search_area_latitude = [
             21.4002344, 21.4003056, 21,4004118, 21.4004817, 
             21.4005753, 21.4007576, 21.4006702, 21.4006128, 
-            21.4005541, 21.4004842, 21.4004530, 21.4005254
+            21.4005541, 21.4004842, 21.4004530, 21.4005753
         ]
 
         self.search_area_longitude = [
-            -157.7644624, -157.7642258, -157.7640353, -157.7638744, 
+            -157.7644624, -157.7642258, -157.7640527, -157.7638744, 
             -157.7637121, -157.7638395, -157.7640112, -157.7641936,  
-            -157.7643558, -157.7645986, -157.7642298, -157.7639119
+            -157.7643558, -157.7645986, -157.7642298, -157.7639160
         ]
         '''
         self.user_waypoint_input()
@@ -285,34 +285,11 @@ class CLASS:
     
     def waypoint_lap( self ):
         
-        nextWP_index = self.currWP_index + 1
-        storedWP = None
-        nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.alt )
-
-        while self.currWP_index != len( self.waypoint_lap_latitude ):
-            if self.RTL_stat():
-                if storedWP is None:
-                    storedWP = LocationGlobal( self.waypoint_lap_latitude[ self.currWP_index ], self.waypoint_lap_longitude[ self.currWP_index ], self.alt )
-
-                while self.RTL_stat():
-                    pass
-
-                self.UAS_dk.simple_goto( storedWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
-
-            else:
-                    
-                self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
-
-                nextWP_index += 1
-                self.currWP_index += 1
-
-                if nextWP_index == len( self.waypoint_lap_latitude ):
-                    self.currWP_index = 0
-                    self.lap += 1
-
-        return f"Lap number {self.lap} is complete"
+   	def waypoint_lap( self ):
+		for x in range(len(self.waypoint_lap_altitude)):
+			self.UAS_dk.simple_goto(  self.waypoint_lap_latitude[ x ], self.waypoint_lap_longitude[ x ], self.alt  )
+			self.waypoint_reached( self.waypoint_lap_latitude[ x ], self.waypoint_lap_longitude[ x ] )
+		return f"Lap number {self.lap} is complete"
 
     def user_waypoint_input(self):
         # Ask for the number of coordinates and create a latitude and longitude array
