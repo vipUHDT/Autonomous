@@ -265,10 +265,10 @@ class CLASS:
         """
         start = time.time()
         curr_location = self.UAS_dk.location.global_relative_frame
-        lat1 = toRadian(lat1)
-        lon1 = toRadian(lon1)
-        lat2 = toRadian(curr_location.latitude)
-        lon2 = toRadian(curr_location.longitude)
+        lat1 = self.toRadian(lat1)
+        lon1 = self.toRadian(lon1)
+        lat2 = self.toRadian(curr_location.latitude)
+        lon2 = self.toRadian(curr_location.longitude)
 
         end = time.time()
         difference = end - start
@@ -496,7 +496,7 @@ class CLASS:
         :return: None
         """
         start = time.time()
-        for x in range(len(search_area_latitude)):
+        for x in range(len(self.search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
             location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
@@ -513,7 +513,7 @@ class CLASS:
             p1.join()
             p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", drone_sensory))
+            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", self.drone_sensory))
             p3.start()
         end = time.time()
         difference = end - start
