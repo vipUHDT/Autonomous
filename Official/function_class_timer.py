@@ -26,7 +26,7 @@ class CLASS:
 
         #connecting to mavlink
         print('Connecting MavLink')
-        # self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         print('Connecting to mavlink')
 
         #connect the camera
@@ -506,14 +506,14 @@ class CLASS:
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
-            p2 = multiprocessing.Process(targert=self.trigger_camera(f"IMAGE{x}.jpg"))
+            p2 = multiprocessing.Process(target=self.trigger_camera())
             #start the execution and wait 
             p1.start()
             p2.start()
             p1.join()
             p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", self.drone_sensory))
+            p3 = multiprocessing.Process(target = self.geotag())
             p3.start()
         end = time.time()
         difference = end - start
