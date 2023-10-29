@@ -208,7 +208,7 @@ class CLASS:
         tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
         tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
-        
+        self.image_number += 1
         #executing the tag command in ssh
         # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         # subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -232,7 +232,7 @@ class CLASS:
         p3.join()
         p4.join()
 
-        self.image_number += 1
+        
         end = time.time()
         difference = end - start
 
@@ -499,7 +499,7 @@ class CLASS:
         for x in range(len(self.search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
+            location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
             self.UAS_dk.simple_goto( location )
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], x)
