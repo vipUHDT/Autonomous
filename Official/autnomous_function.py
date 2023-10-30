@@ -496,7 +496,7 @@ class CLASS:
         :return: None
         """
         start = time.time()
-        for x in range(len(search_area_latitude)):
+        for x in range(len(self.search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
             location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
@@ -506,14 +506,14 @@ class CLASS:
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
-            p2 = multiprocessing.Process(targert=self.trigger_camera(f"IMAGE{x}.jpg"))
+            p2 = multiprocessing.Process(target=self.trigger_camera(f"IMAGE{x}.jpg"))
             #start the execution and wait 
             p1.start()
             p2.start()
             p1.join()
             p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg", drone_sensory))
+            p3 = multiprocessing.Process(target = self.geotag(f"IMAGE{x}.jpg"))
             p3.start()
         end = time.time()
         difference = end - start
