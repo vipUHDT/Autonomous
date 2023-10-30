@@ -102,7 +102,7 @@ class CLASS:
             except ValueError as e:
                 print(e)
 
-    def trigger_camera(self):
+    def trigger_camera(self, image_name):
         """
         Trigger the camera to capture an image.
 
@@ -115,6 +115,7 @@ class CLASS:
         print(f'image{self.image_number} IS BEING TAKEN')
         cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
         self.subprocess_execute(cmd)
+        print("#####################",image_name, "###########################")
         print(f'Image{self.image_number} Captured \n')
         end = time.time()
         difference = end - start
@@ -189,7 +190,7 @@ class CLASS:
         difference = end - start
         self.subprocess_execute_time.append(difference)
           
-    def geotag(self):
+    def geotag(self, image_name):
         """
         Geotag an image with sensory data.
 
@@ -204,10 +205,10 @@ class CLASS:
         # Geotagging photo with the attitude and GPS coordinate
         pyr = ('pitch:' + str(self.drone_sensory[0]) + ' yaw:' + str(self.drone_sensory[2]) + ' roll:' + str(self.drone_sensory[1]))
         print(pyr)
-        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), self.filename + str(self.image_number))
-        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
-        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
-        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
+        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), image_name)
+        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', image_name)
+        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', image_name)
+        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', image_name)
         self.image_number += 1
         #executing the tag command in ssh
         # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -506,14 +507,14 @@ class CLASS:
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera())
+            p2 = multiprocessing.Process(target=self.trigger_camera(), args= (f"image{x}.jpg",))
             #start the execution and wait 
             p1.start()
             p2.start()
             p1.join()
             p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag())
+            p3 = multiprocessing.Process(target = self.geotag(), args= (f"image{x}.jpg",))
             p3.start()
         end = time.time()
         difference = end - start
