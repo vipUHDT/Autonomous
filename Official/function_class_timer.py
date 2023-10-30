@@ -25,12 +25,12 @@ class CLASS:
         print("Connected with DroneKit")
 
         #connecting to mavlink
-        print('Connecting MavLink')
-        self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
-        print('Connecting to mavlink')
+        #print('Connecting MavLink')
+        #self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        #print('Connecting to mavlink')
 
         #connect the camera
-        #self.subprocess('"gphoto2", "--auto-connect"')
+        #self.subprocess.run('"gphoto2", "--auto-connect"')
         camera = gp.Camera()
         camera.init
         print('Camera Connected')
@@ -503,7 +503,7 @@ class CLASS:
             location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
             self.UAS_dk.simple_goto( location )
             #call the waypoint reached
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], x)
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
