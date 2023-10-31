@@ -189,7 +189,7 @@ class CLASS:
         difference = end - start
         self.subprocess_execute_time.append(difference)
           
-    def geotag(self):
+    def geotag(self, image_name):
         """
         Geotag an image with sensory data.
 
@@ -204,10 +204,10 @@ class CLASS:
         # Geotagging photo with the attitude and GPS coordinate
         pyr = ('pitch:' + str(self.drone_sensory[0]) + ' yaw:' + str(self.drone_sensory[2]) + ' roll:' + str(self.drone_sensory[1]))
         print(pyr)
-        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), self.filename + str(self.image_number))
-        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', self.filename + str(self.image_number))
-        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', self.filename + str(self.image_number))
-        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', self.filename + str(self.image_number))
+        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), image_number)
+        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', image_name)
+        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', image_name)
+        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', image_name)
         
         #executing the tag command in ssh
         # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -338,7 +338,7 @@ class CLASS:
         return print("Not Implemented")
 
     
-    def waypoint_reached (self, latitude_deg, longitude_deg ):
+    def waypoint_reached (self, latitude_deg, longitude_deg):
         """
         Check if the UAS has reached a specified waypoint.
 
@@ -502,7 +502,7 @@ class CLASS:
             location = LocationGlobal(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
             self.UAS_dk.simple_goto( location )
             #call the waypoint reached
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], x)
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
