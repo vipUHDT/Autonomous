@@ -25,9 +25,9 @@ class CLASS:
         print("Connected with DroneKit")
 
         #connecting to mavlink
-        #print('Connecting MavLink')
-        #self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
-        #print('Connecting to mavlink')
+        print('Connecting MavLink')
+        self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        print('Connecting to mavlink')
 
         #connect the camera
         #self.subprocess.run('"gphoto2", "--auto-connect"')
@@ -298,7 +298,28 @@ class CLASS:
         Returns:
             None
         """
-        return print("Not Implemented")
+        # Create a waypoint command
+        command = mavutil.mavlink.MAV_CMD_NAV_SPLINE_WAYPOINT
+
+
+        #parameter for waypoint
+        LONG_SEND_WAYPOINT_parameter = [
+            UAS_mav.target_system,  #target_system
+            UAS_mav.target_component, #target_component
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+            0, #confirmation 
+            0, #hold (s)
+            0, #empty
+            0, #empty
+            0, #empty
+            latitude,  
+            longitude,  
+            self.alt
+            ]  
+
+        UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print(msg)
 
     def waypoint_command(self, latitude, longitude):
         """
@@ -311,7 +332,28 @@ class CLASS:
         Returns:
             None
         """
-        return print("Not Implemented")
+        # Create a waypoint command
+        command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
+
+
+        #parameter for waypoint
+        LONG_SEND_WAYPOINT_parameter = [
+            UAS_mav.target_system,  #target_system
+            UAS_mav.target_component, #target_component
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+            0, #confirmation 
+            0, #hold (s)
+            10, #Accept radius (m)
+            0, #pass radius (m)
+            0, #yaw (deg)
+            latitude,  
+            longitude,  
+            self.alt
+            ]  
+
+        UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print(msg)
 
     def distance_command(self, latitude, longitude):
         """
@@ -324,7 +366,28 @@ class CLASS:
         Returns:
             None
         """
-        return print("Not implemented")
+        # Create a waypoint command
+        command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
+
+
+        #parameter for waypoint
+        LONG_SEND_WAYPOINT_parameter = [
+            UAS_mav.target_system,  #target_system
+            UAS_mav.target_component, #target_component
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+            0, #confirmation 
+            0, #hold (s)
+            10, #Accept radius (m)
+            0, #pass radius (m)
+            0, #yaw (deg)
+            latitude,  
+            longitude,  
+            self.alt
+            ]  
+
+        UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print(msg)
     
     def servo_command(self, servo_x):
         """
@@ -336,7 +399,28 @@ class CLASS:
         Returns:
             None
         """
-        return print("Not Implemented")
+        # Create a waypoint command
+        command = mavutil.mavlink.MAV_CMD_DO_SET_SERVO
+
+
+        #parameter for waypoint
+        LONG_SEND_WAYPOINT_parameter = [
+            UAS_mav.target_system,  #target_system
+            UAS_mav.target_component, #target_component
+            command, #action command
+            0, #confirmation 
+            servo_x, #servo motor number
+            1000, #pulse width modulation (PWM)
+            0, #empty
+            0, #empty
+            0, #empty  
+            0, #empty  
+            0 #empty
+            ]  
+
+        UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print(msg)
 
     
     def waypoint_reached (self, latitude_deg, longitude_deg ):
