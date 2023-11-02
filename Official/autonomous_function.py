@@ -95,21 +95,18 @@ class CLASS:
         ]
         
         self.user_waypoint_input()
-        '''
-        while True:
-            try:
-                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                if response in [1, 2]:
-                    if (response ==2):
-                        self.user_waypoint_input()
-                    else:
-                        break
-                else:
-                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+        print("AUTONOMOUS SCRIPT IS READY")
+        while self.IS_ARMED != True:
+            print("Waiting for arming....")
+            time.sleep(0.5)
 
-            except ValueError as e:
-                print(e)
-        '''
+        print("UAS IS NOW ARMED")
+        while self.IS_AUTO != True:
+            print("Waiting for UAS to be in AUTO MODE.........")
+            time.sleep(0.5)
+        print("UAS IS NOW IN AUTO MODE")
+        print("!------------------ MISSION STARTING ----------------------!")
+
 
     def trigger_camera(self, image_name):
         """
@@ -124,10 +121,10 @@ class CLASS:
         print(f'{image_name} IS BEING TAKEN')
         cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
         self.subprocess_execute(cmd)
-        print(f'{image_name} Captured \n')
         end = time.time()
         difference = end - start
         self.trigger_camera_time.append(difference)
+        return print(f'{image_name} Captured \n')
 
     def attitude(self):
         """
@@ -246,7 +243,7 @@ class CLASS:
         difference = end - start
 
         self.geotag_time.append(difference)
-        return print(f"{image_name} geotagged")
+        return print(f"{image_name} GEOTAGGED")
 
     def toRadian(self, degree):
         """
@@ -540,21 +537,6 @@ class CLASS:
             else:
                 print(waypoint_lap_latitude [i], end=", ")
 
-                while True:
-                    try:
-                        response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                        if response in [1, 2]:
-                            if (response ==2):
-                                self.user_waypoint_input()
-                            else:
-                                break
-                        else:
-                            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
-
-                    except ValueError as e:
-                        print(e)
-            
-
         print("\nLongitudes entered:")
         for i in range(number_of_coordinates):
             if (i == number_of_coordinates-1):
@@ -562,6 +544,23 @@ class CLASS:
             else:
                 print(waypoint_lap_longitude[i], end=", ") 
     
+
+        while True:
+            try:
+                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                if response in [1, 2]:
+                    if (response ==2):
+                        self.user_waypoint_input()
+                    else:
+                        break
+                else:
+                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+            except ValueError as e:
+                print(e)
+    
+
+
     def deliver_payload(self, servo_x, latitude, longitude):
         """
         Deliver a payload using a specified servo (not implemented).
