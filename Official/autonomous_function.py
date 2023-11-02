@@ -3,9 +3,9 @@ import os
 import math
 import multiprocessing
 import subprocess
-#import exiftool
-#from pymavlink import mavutil
-#from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+import exiftool
+from pymavlink import mavutil
+from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
 
 class CLASS:
@@ -25,12 +25,12 @@ class CLASS:
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
         print('Connecting MavLink')
-        #self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         #self.UAS_mav.wait_heartbeat()
         #print("hearbeat from system {system %u compenent %u}" %(UAS.target_system, UAS_mav.target_component))
         print("Mavlink Connected")
@@ -40,8 +40,8 @@ class CLASS:
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
         print(f'MADE DIRECTORY {image_dir}')
-        #os.mkdir(image_dir)
-        #os.chdir(str(image_dir))
+        os.mkdir(image_dir)
+        os.chdir(str(image_dir))
         print(f'MOVED TO {image_dir} DIRECTORY')
         print("CREATING TEST DATA FILE")
         with open('Data_log.txt', "a") as file:
