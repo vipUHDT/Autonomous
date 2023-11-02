@@ -490,29 +490,8 @@ class CLASS:
         nextWP_index = self.currWP_index + 1
         storedWP = None
         nextWP = [self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ]]
-
-        while self.currWP_index != len( self.waypoint_lap_latitude ):
-            if self.RTL_stat():
-                if storedWP is None:
-                    storedWP = [self.waypoint_lap_latitude[ self.currWP_index ], self.waypoint_lap_longitude[ self.currWP_index ]]
-
-                while self.RTL_stat():
-                    pass
-
-                self.waypoint_command( storedWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
-
-            else:
-                    
-                self.waypoint_command( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
-
-                nextWP_index += 1
-                self.currWP_index += 1
-
-                if nextWP_index == len( self.waypoint_lap_latitude ):
-                    self.currWP_index = 0
-                    self.lap += 1
+        waypoint_command(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ])
+        waypoint_reached(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS)
 
         return f"Lap number {self.lap} is complete"
 
