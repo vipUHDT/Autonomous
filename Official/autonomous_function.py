@@ -463,7 +463,7 @@ class CLASS:
 
             if(self.RTL_stat() == True):
 
-                while self.RTL_stat():
+                while (self.RTL_stat() == True & self.IS_AUTO() != TRUE):
                     pass
 
                 self.waypoint_command(latitude_deg,longitude_deg)
