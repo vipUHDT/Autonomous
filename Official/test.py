@@ -1,6 +1,5 @@
-import function_class_timer
+#import function_class_timer
+import autonomous_function
 
-fc = function_class_timer.CLASS()
+fc = autonomous_function.CLASS()
 
-fc.waypoint_lap()
-fc.search_area_waypoint()

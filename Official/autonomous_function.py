@@ -3,9 +3,9 @@ import os
 import math
 import multiprocessing
 import subprocess
-import exiftool
-from pymavlink import mavutil
-from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+#import exiftool
+#from pymavlink import mavutil
+#from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
 
 class CLASS:
@@ -17,15 +17,20 @@ class CLASS:
 
         :return: None
         """
+        #PARAMTERS
+        self.ALTITUDE = 75.0
+        self.WAYPOINT_RADIUS = 7.5
+        self.PAYLOAD_RADIUS = 2
+        self.SEARCH_AREA_RADIUS = 2
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
         print('Connecting MavLink')
-        self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
+        #self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         #self.UAS_mav.wait_heartbeat()
         #print("hearbeat from system {system %u compenent %u}" %(UAS.target_system, UAS_mav.target_component))
         print("Mavlink Connected")
@@ -35,8 +40,8 @@ class CLASS:
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
         print(f'MADE DIRECTORY {image_dir}')
-        os.mkdir(image_dir)
-        os.chdir(str(image_dir))
+        #os.mkdir(image_dir)
+        #os.chdir(str(image_dir))
         print(f'MOVED TO {image_dir} DIRECTORY')
         print("CREATING TEST DATA FILE")
         with open('Data_log.txt', "a") as file:
@@ -64,7 +69,6 @@ class CLASS:
         self.yaw = 0.0
         self.lat = 0.0
         self.lon = 0.0
-        self.alt = 75.0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
@@ -89,8 +93,9 @@ class CLASS:
             -157.7637121, -157.7638395, -157.7640112, -157.7641936,  
             -157.7643558, -157.7645986, -157.7642298, -157.7639160
         ]
-        '''
+        
         self.user_waypoint_input()
+        '''
         while True:
             try:
                 response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
@@ -281,6 +286,24 @@ class CLASS:
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
+    def IS_ARMED(self):
+        """
+        Check if the UAS is "ARMED" mode.
+
+        Returns:
+            bool: True if the UAS is ARMED, False otherwise.
+        """  
+        return self.UAS_dk.ARMED
+
+    def IS_AUTO(self):
+        """
+        Check if the UAS is in "AUTO" mode.
+
+        Returns:
+            bool: True if the UAS is in AUTO, False otherwise.
+        """        
+        return self.UAS_dk.mode == "AUTO"
+
     def RTL_stat( self ):
         """
         Check if the UAS is in "Return to Launch" mode.
@@ -288,7 +311,7 @@ class CLASS:
         Returns:
             bool: True if the UAS is in RTL mode, False otherwise.
         """
-        return self.UAS_dk.mode == VehicleMode("RTL")
+        return self.UAS_dk.mode == "RTL"
 
     def spline_command(self, latitude, longitude):
         """
@@ -315,14 +338,14 @@ class CLASS:
             0, #empty
             0, #empty
             0, #empty
-            latitude,  
-            longitude,  
-            self.alt
+            float(latitude),  
+            float(longitude),  
+            float(self.ALTITUDE)
             ]  
 
         self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print(msg)
+        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print('SPLINED TO A WAYPOINT')
 
     def waypoint_command(self, latitude, longitude):
         """
@@ -349,7 +372,7 @@ class CLASS:
             0, #yaw (deg)
             float(latitude),  
             float(longitude),  
-            float(self.alt))
+            float(self.ALTITUDE))
         #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
         #print(msg)
         return print("Going to waypoint")
@@ -368,7 +391,6 @@ class CLASS:
         # Create a waypoint command
         command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
 
-
         #parameter for waypoint
         LONG_SEND_WAYPOINT_parameter = [
             UAS_mav.target_system,  #target_system
@@ -379,9 +401,9 @@ class CLASS:
             10, #Accept radius (m)
             0, #pass radius (m)
             0, #yaw (deg)
-            latitude,  
-            longitude,  
-            self.alt
+            float(latitude),  
+            float(longitude),  
+            float(self.ALTITUDE)
             ]  
 
         UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
@@ -417,12 +439,12 @@ class CLASS:
             0 #empty
             ]  
 
-        self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print(msg)
+        #self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print('SERVO ACTIVATED')
 
     
-    def waypoint_reached (self, latitude_deg, longitude_deg ):
+    def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
         Check if the UAS has reached a specified waypoint.
 
@@ -437,7 +459,7 @@ class CLASS:
         distance = self.haversine(latitude_deg,longitude_deg )
 
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
-        while(distance > 7.5):
+        while(distance > radius):
 
             if(self.RTL_stat() == True):
 
@@ -445,7 +467,7 @@ class CLASS:
                     pass
 
                 self.waypoint_command(latitude_deg,longitude_deg)
-                self.waypoint_reached( latitude_deg, longitude_deg )
+                self.waypoint_reached( latitude_deg, longitude_deg, radius )
                 break
              
             #distance between 2 points retuirn value in feet    
@@ -478,12 +500,12 @@ class CLASS:
                     pass
 
                 self.waypoint_command( storedWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
 
             else:
                     
                 self.waypoint_command( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
 
                 nextWP_index += 1
                 self.currWP_index += 1
@@ -538,6 +560,20 @@ class CLASS:
                 print(waypoint_lap_latitude [i])
             else:
                 print(waypoint_lap_latitude [i], end=", ")
+
+                while True:
+                    try:
+                        response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                        if response in [1, 2]:
+                            if (response ==2):
+                                self.user_waypoint_input()
+                            else:
+                                break
+                        else:
+                            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+                    except ValueError as e:
+                        print(e)
             
 
         print("\nLongitudes entered:")
@@ -547,7 +583,7 @@ class CLASS:
             else:
                 print(waypoint_lap_longitude[i], end=", ") 
     
-    def deliver_payload(self, servo_x, longitude, latitude):
+    def deliver_payload(self, servo_x, latitude, longitude):
         """
         Deliver a payload using a specified servo (not implemented).
 
@@ -561,15 +597,17 @@ class CLASS:
         """
         start = time.time()
 
+        self.waypoint_command(latitude,longitude)
+        self.waypoint_reached(latitude,longitude,self.PAYLOAD_RADIUS)
+        self.servo_command(servo_x)
         
-        #ENTER CODE HERE
         
         end = time.time()
         difference = end - start
         self.deliver_payload_time.append(difference)
 
 
-        return print("NOT IMPLEMENTED")
+        return print(f"Payload {servo_x} Delivered")
 
     def search_area_waypoint(self):
         """
@@ -583,13 +621,13 @@ class CLASS:
         for x in range(len(self.search_area_latitude)-1):
             #go to wp
             print(f"############ GOING TO SEARCH AREA WAYPOINT: {x+1} ############") 
-            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x])
+            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x]) 
             
-            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],float(self.alt))
+            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],float(self.ALTITUDE))
             #self.UAS_dk.simple_goto( location )
             
             #call the waypoint reached
-            #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image

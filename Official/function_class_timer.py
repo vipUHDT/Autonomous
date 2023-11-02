@@ -271,8 +271,8 @@ class CLASS:
         curr_location = self.UAS_dk.location.global_relative_frame
         lat1 = self.toRadian(lat1)
         lon1 = self.toRadian(lon1)
-        lat2 = self.toRadian(curr_location.latitude)
-        lon2 = self.toRadian(curr_location.longitude)
+        lat2 = self.toRadian(curr_location.lat)
+        lon2 = self.toRadian(curr_location.lon)
 
         end = time.time()
         difference = end - start
@@ -422,8 +422,8 @@ class CLASS:
             ]  
 
         self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print(msg)
+        #msg = self.UAS_mav.recv_msg(msgid=MAVLINK_MSG_ID_COMMAND_ACK, blocking = True)
+        return print(f'GOING TO WAYPOINT')
 
     
     def waypoint_reached (self, latitude_deg, longitude_deg ):
