@@ -27,9 +27,12 @@ class CLASS:
         #connecting to mavlink
         print('Connecting MavLink')
         self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
-        print('Connecting to mavlink')
+        UAS_mav.wait_heartbeat()
+        print("hearbeat from system {system %u compenent %u}" %(UAS.target_system, UAS_mav.target_component))
+        print("Mavlink Connected")
 
         #connect the camera
+        print("Connecting to the camera")
         #self.subprocess.run('"gphoto2", "--auto-connect"')
         camera = gp.Camera()
         camera.init
@@ -228,10 +231,10 @@ class CLASS:
         p3.start()
         p4.start()
         
-        p1.join()
-        p2.join()
-        p3.join()
-        p4.join()
+        # p1.join()
+        # p2.join()
+        # p3.join()
+        # p4.join()
 
         
         end = time.time()
@@ -584,8 +587,11 @@ class CLASS:
         for x in range(len(self.search_area_latitude)):
             #go to wp
             print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
-            self.UAS_dk.simple_goto( location )
+            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x])
+            
+            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
+            #self.UAS_dk.simple_goto( location )
+            
             #call the waypoint reached
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
             #get attitide data
