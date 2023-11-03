@@ -235,12 +235,12 @@ class CLASS:
         p2.start()
         p3.start()
         p4.start()
-        
+        '''
         p1.join()
         p2.join()
         p3.join()
         p4.join()
-
+        '''
         
         end = time.time()
         difference = end - start
