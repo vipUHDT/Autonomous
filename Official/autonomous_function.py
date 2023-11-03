@@ -463,7 +463,7 @@ class CLASS:
 
             if(self.RTL_stat() == True):
 
-                while (self.RTL_stat() == True & self.IS_AUTO() != TRUE):
+                while self.RTL_stat():
                     pass
 
                 self.waypoint_command(latitude_deg,longitude_deg)
@@ -490,8 +490,29 @@ class CLASS:
         nextWP_index = self.currWP_index + 1
         storedWP = None
         nextWP = [self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ]]
-        waypoint_command(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ])
-        waypoint_reached(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS)
+
+        while self.currWP_index != len( self.waypoint_lap_latitude ):
+            if self.RTL_stat():
+                if storedWP is None:
+                    storedWP = [self.waypoint_lap_latitude[ self.currWP_index ], self.waypoint_lap_longitude[ self.currWP_index ]]
+
+                while self.RTL_stat():
+                    pass
+
+                self.waypoint_command( storedWP )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
+
+            else:
+                    
+                self.waypoint_command( nextWP )
+                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS )
+
+                nextWP_index += 1
+                self.currWP_index += 1
+
+                if nextWP_index == len( self.waypoint_lap_latitude ):
+                    self.currWP_index = 0
+                    self.lap += 1
 
         return f"Lap number {self.lap} is complete"
 
@@ -561,7 +582,63 @@ class CLASS:
                 print(waypoint_lap_longitude[i])
             else:
                 print(waypoint_lap_longitude[i], end=", ") 
-    
+
+        #------------------------------------------------------------#
+        # Display parameters to the user and give option to change the parameters
+
+        while 1:
+            print(f"\nSET PARAMETERS ARE:\n")
+            print(f"ALTITUDE: {self.ALTITUDE}")
+            print(f"WAYPOINT_RADIUS: {self.WAYPOINT_RADIUS}")
+            print(f"PAYLOAD_RADIUS: {self.PAYLOAD_RADIUS}")
+            print(f"SEARCH_AREA_RADIUS: {self.SEARCH_AREA_RADIUS}")
+
+            try:
+                # Ask user if the parameters are ok
+                response = int(input("\nARE THESE PARAMETERS OK?\n1-YES or 2-NO\n"))
+                if (response in [1, 2]):
+                    if (response == 1):
+                        break # Parameters are ok
+                    if (response == 2):
+
+                        # Ask user to enter new altitude
+                        while 1:
+                            try:
+                                self.ALTITUDE = float(input("\nENTER NEW ALTITUDE\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+                    
+                        # Ask user to enter new waypoint_radius
+                        while 1:
+                            try:
+                                self.WAYPOINT_RADIUS = float(input("\nENTER NEW WAYPOINT_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                        # Ask user to enter new payload_radius
+                        while 1:
+                            try:
+                                self.PAYLOAD_RADIUS = float(input("\nENTER NEW PAYLOAD_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                        # Ask user to enter new search_area_radius
+                        while 1:
+                            try:
+                                self.SEARCH_AREA_RADIUS = float(input("\nENTER NEW SEARCH_AREA_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                else:
+                    raise ValueError("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # response not 1 or 2
+
+            except ValueError:
+                print("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # invalid response
+
     def deliver_payload(self, servo_x, latitude, longitude):
         """
         Deliver a payload using a specified servo (not implemented).
