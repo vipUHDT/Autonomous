@@ -32,7 +32,7 @@ class CLASS:
         print('Connecting MavLink')
         self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
         #self.UAS_mav.wait_heartbeat()
-        #print("hearbeat from system {system %u compenent %u}" %(UAS.target_system, UAS_mav.target_component))
+        #print("hearbeat from system {system %u compenent %u}" %(UAS_mav.target_system, UAS_mav.target_component))
         print("Mavlink Connected")
 
 
@@ -69,6 +69,7 @@ class CLASS:
         self.yaw = 0.0
         self.lat = 0.0
         self.lon = 0.0
+        self.alt = 0.0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
@@ -106,6 +107,7 @@ class CLASS:
             time.sleep(0.5)
         print("UAS IS NOW IN AUTO MODE")
         print("!------------------ MISSION STARTING ----------------------!")
+        
 
 
     def trigger_camera(self, image_name):
@@ -119,7 +121,7 @@ class CLASS:
         """
         start = time.time()
         print(f'{image_name} IS BEING TAKEN')
-        cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
+        cmd = ('gphoto2', '--capture-image-and-download', '--filename', image_name)
         self.subprocess_execute(cmd)
         end = time.time()
         difference = end - start
@@ -216,12 +218,13 @@ class CLASS:
         tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', image_name)
         self.image_number += 1 #doesnt work
         #executing the tag command in ssh
-        # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        '''
+        subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 
-
+        '''
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
@@ -233,17 +236,17 @@ class CLASS:
         p3.start()
         p4.start()
         
-        # p1.join()
-        # p2.join()
-        # p3.join()
-        # p4.join()
+        p1.join()
+        p2.join()
+        p3.join()
+        p4.join()
 
         
         end = time.time()
         difference = end - start
 
         self.geotag_time.append(difference)
-        return print(f"{image_name} GEOTAGGED")
+        return print(f"----------------- {image_name} GEOTAGGED -----------------")
 
     def toRadian(self, degree):
         """
@@ -605,7 +608,7 @@ class CLASS:
             #self.UAS_dk.simple_goto( location )
             
             #call the waypoint reached
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
+            #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
@@ -616,8 +619,8 @@ class CLASS:
             p1.join()
             p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag, args= (f"image{x}.jpg",))
-            p3.start()
+            self.geotag(f'image{x+1}.jpg')
+
         end = time.time()
         difference = end - start
         self.search_area_waypoint_time.append(difference)
