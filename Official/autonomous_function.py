@@ -94,8 +94,8 @@ class CLASS:
             -157.7637121, -157.7638395, -157.7640112, -157.7641936,  
             -157.7643558, -157.7645986, -157.7642298, -157.7639160
         ]
-        
         self.user_waypoint_input()
+        '''
         print("AUTONOMOUS SCRIPT IS READY")
         while self.IS_ARMED != True:
             print("Waiting for arming....")
@@ -107,7 +107,7 @@ class CLASS:
             time.sleep(0.5)
         print("UAS IS NOW IN AUTO MODE")
         print("!------------------ MISSION STARTING ----------------------!")
-        
+        '''
 
 
     def trigger_camera(self, image_name):
@@ -225,6 +225,7 @@ class CLASS:
         subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 
         '''
+        
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
@@ -235,18 +236,13 @@ class CLASS:
         p2.start()
         p3.start()
         p4.start()
-        '''
-        p1.join()
-        p2.join()
-        p3.join()
-        p4.join()
-        '''
         
+
         end = time.time()
         difference = end - start
 
         self.geotag_time.append(difference)
-        return print(f"----------------- {image_name} GEOTAGGED -----------------")
+        return print(f"{image_name} GEOTAGGED")
 
     def toRadian(self, degree):
         """
@@ -490,8 +486,8 @@ class CLASS:
         nextWP_index = self.currWP_index + 1
         storedWP = None
         nextWP = [self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ]]
-        waypoint_command(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ])
-        waypoint_reached(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS)
+        self.waypoint_command(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ])
+        self.waypoint_reached(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS)
 
         return f"Lap number {self.lap} is complete"
 
@@ -610,14 +606,16 @@ class CLASS:
             #call the waypoint reached
             #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             #get attitide data
-            p1 = multiprocessing.Process(target=self.attitude())
+            #p1 = multiprocessing.Process(target=self.attitude())
+            self.attitude()
+            self.trigger_camera(f'image{x+1}.jpg')
             #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
+            #p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
             #start the execution and wait 
-            p1.start()
-            p2.start()
-            p1.join()
-            p2.join()
+            #p1.start()
+            #p2.start()
+            #p1.join()
+            #p2.join()
             #geotag
             self.geotag(f'image{x+1}.jpg')
 

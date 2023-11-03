@@ -3,7 +3,6 @@ import os
 import math
 import multiprocessing
 import subprocess
-import gphoto2 as gp 
 import exiftool
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
@@ -18,6 +17,11 @@ class CLASS:
 
         :return: None
         """
+        #PARAMTERS
+        self.ALTITUDE = 75.0
+        self.WAYPOINT_RADIUS = 7.5
+        self.PAYLOAD_RADIUS = 2
+        self.SEARCH_AREA_RADIUS = 2
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = "/dev/ttyACM0" #usb to micro usb
@@ -27,16 +31,11 @@ class CLASS:
         #connecting to mavlink
         print('Connecting MavLink')
         self.UAS_mav = mavutil.mavlink_connection('/dev/ttyACM0', baud=57600)
-        self.UAS_mav.wait_heartbeat()
-        print("hearbeat from system {system %u compenent %u}" %(UAS.target_system, UAS_mav.target_component))
+        #self.UAS_mav.wait_heartbeat()
+        #print("hearbeat from system {system %u compenent %u}" %(UAS_mav.target_system, UAS_mav.target_component))
         print("Mavlink Connected")
 
-        #connect the camera
-        print("Connecting to the camera")
-        #self.subprocess.run('"gphoto2", "--auto-connect"')
-        camera = gp.Camera()
-        camera.init
-        print('Camera Connected')
+
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -58,52 +57,58 @@ class CLASS:
         self.trigger_camera_time = []
         self.waypoint_lap_time = []
 
+        #connect the camera
+        print("Connecting to the camera")
+        self.command = ["gphoto2", "--auto-detect"]
+        self.subprocess_execute(self.command)
+        print('Camera Connected')
+
         #declaring initial variable
-        self.pitch = 0
-        self.roll = 0
-        self.yaw = 0
-        self.lat = 0
-        self.lon = 0
-        self.alt = 0
+        self.pitch = 0.0
+        self.roll = 0.0
+        self.yaw = 0.0
+        self.lat = 0.0
+        self.lon = 0.0
+        self.alt = 0.0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
         self.lap = 0
         self.filename = f"image"
-        self.waypoint_lap_latitude = []
-        self.waypoint_lap_longitude = []
+        self.waypoint_lap_latitude = [
+            21.4002232, 21.4004455, 21.4007302, 21.4004929
+        ]
+        self.waypoint_lap_longitude = [
+            -157.7645463, -157.7646348, -157.7639616, -157.7637658
+        ]
 
-        #predefined search area value
+        #predefined search area value for Kawainui test
         self.search_area_latitude = [
-            38.31455510, 38.31453830, 38.31452150, 38.31455510, 38.31453830, 38.31452150,
-            38.31450570, 38.31448990, 38.31447520, 38.31445830, 38.31444260, 38.31442890,
-            38.31441410, 38.31439630, 38.31438150, 38.31437100, 38.31435840, 38.31425310,
-            38.31426740, 38.31428050, 38.31429730, 38.31431400, 38.31432680, 38.31434370,
-            38.31436050, 38.31437420, 38.31439070, 38.31440710, 38.31442050, 38.31443710
+            21.4002344, 21.4003056, 21,4004118, 21.4004817, 
+            21.4005753, 21.4007576, 21.4006702, 21.4006128, 
+            21.4005541, 21.4004842, 21.4004530, 21.4005753
         ]
 
         self.search_area_longitude = [
-            -76.54514240, -76.54504980, -76.54496000, -76.54514240, -76.54504980, -76.54496000,
-            -76.54486750, -76.54478030, -76.54469040, -76.54460060, -76.54451210, -76.54441950,
-            -76.54432700, -76.54424120, -76.54415400, -76.54406280, -76.54396620, -76.54399840,
-            -76.54408890, -76.54418350, -76.54427170, -76.54435990, -76.54445170, -76.54454130,
-            -76.54463080, -76.54472400, -76.54481290, -76.54490170, -76.54499350, -76.54508310
+            -157.7644624, -157.7642258, -157.7640527, -157.7638744, 
+            -157.7637121, -157.7638395, -157.7640112, -157.7641936,  
+            -157.7643558, -157.7645986, -157.7642298, -157.7639160
         ]
-
         self.user_waypoint_input()
-        while True:
-            try:
-                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                if response in [1, 2]:
-                    if (response ==2):
-                        self.user_waypoint_input()
-                    else:
-                        break
-                else:
-                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+        '''
+        print("AUTONOMOUS SCRIPT IS READY")
+        while self.IS_ARMED != True:
+            print("Waiting for arming....")
+            time.sleep(0.5)
 
-            except ValueError as e:
-                print(e)
+        print("UAS IS NOW ARMED")
+        while self.IS_AUTO != True:
+            print("Waiting for UAS to be in AUTO MODE.........")
+            time.sleep(0.5)
+        print("UAS IS NOW IN AUTO MODE")
+        print("!------------------ MISSION STARTING ----------------------!")
+        '''
+
 
     def trigger_camera(self, image_name):
         """
@@ -115,14 +120,13 @@ class CLASS:
         :return: None
         """
         start = time.time()
-        print(f'image{self.image_number} IS BEING TAKEN')
-        cmd = ('gphoto2', '--capture-image-and-download', '--filename', f'image{self.image_number}')
+        print(f'{image_name} IS BEING TAKEN')
+        cmd = ('gphoto2', '--capture-image-and-download', '--filename', image_name)
         self.subprocess_execute(cmd)
-        print("#####################",image_name, "###########################")
-        print(f'Image{self.image_number} Captured \n')
         end = time.time()
         difference = end - start
         self.trigger_camera_time.append(difference)
+        return print(f'{image_name} Captured \n')
 
     def attitude(self):
         """
@@ -208,18 +212,18 @@ class CLASS:
         # Geotagging photo with the attitude and GPS coordinate
         pyr = ('pitch:' + str(self.drone_sensory[0]) + ' yaw:' + str(self.drone_sensory[2]) + ' roll:' + str(self.drone_sensory[1]))
         print(pyr)
-        tag_pyr_command = ('exiftool', '-comment=' + str(pyr), image_name)
-        tag_lat_command = ('exiftool', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', image_name)
-        tag_long_command = ('exiftool', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', image_name)
-        tag_alt_command = ('exiftool', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', image_name)
-        self.image_number += 1
+        tag_pyr_command = ('exiftool','-overwrite_original', '-comment=' + str(pyr), str(image_name))
+        tag_lat_command = ('exiftool', '-overwrite_original', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', str(image_name))
+        tag_long_command = ('exiftool','-overwrite_original', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', str(image_name))
+        tag_alt_command = ('exiftool','-overwrite_original', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', str(image_name))
+        self.image_number += 1 #doesnt work
         #executing the tag command in ssh
-        # subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        # subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        '''subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)'''
                 
-
+        
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
@@ -231,17 +235,12 @@ class CLASS:
         p3.start()
         p4.start()
         
-        # p1.join()
-        # p2.join()
-        # p3.join()
-        # p4.join()
 
-        
         end = time.time()
         difference = end - start
 
         self.geotag_time.append(difference)
-        return print(f"{self.filename + str(self.image_number-1)} geotagged")
+        return print(f"{image_name} GEOTAGGED")
 
     def toRadian(self, degree):
         """
@@ -281,6 +280,24 @@ class CLASS:
         # feet conversion * earth radius * something
         return 5280 * 3963.0 * math.acos( (math.sin(lat1)*math.sin(lat2)) + (math.cos(lat1) * math.cos(lat2)) * math.cos(lon2 - lon1) )
 
+    def IS_ARMED(self):
+        """
+        Check if the UAS is "ARMED" mode.
+
+        Returns:
+            bool: True if the UAS is ARMED, False otherwise.
+        """  
+        return self.UAS_dk.ARMED
+
+    def IS_AUTO(self):
+        """
+        Check if the UAS is in "AUTO" mode.
+
+        Returns:
+            bool: True if the UAS is in AUTO, False otherwise.
+        """        
+        return self.UAS_dk.mode == "AUTO"
+
     def RTL_stat( self ):
         """
         Check if the UAS is in "Return to Launch" mode.
@@ -288,7 +305,7 @@ class CLASS:
         Returns:
             bool: True if the UAS is in RTL mode, False otherwise.
         """
-        return self.UAS_dk.mode == VehicleMode("RTL")
+        return self.UAS_dk.mode == "RTL"
 
     def spline_command(self, latitude, longitude):
         """
@@ -315,14 +332,14 @@ class CLASS:
             0, #empty
             0, #empty
             0, #empty
-            latitude,  
-            longitude,  
-            self.alt
+            float(latitude),  
+            float(longitude),  
+            float(self.ALTITUDE)
             ]  
 
         self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print(msg)
+        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print('SPLINED TO A WAYPOINT')
 
     def waypoint_command(self, latitude, longitude):
         """
@@ -339,9 +356,7 @@ class CLASS:
         command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
 
 
-        #parameter for waypoint
-        LONG_SEND_WAYPOINT_parameter = [
-            self.UAS_mav.target_system,  #target_system
+        self.UAS_mav.mav.command_long_send(self.UAS_mav.target_system,  #target_system
             self.UAS_mav.target_component, #target_component
             command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
             0, #confirmation 
@@ -349,14 +364,12 @@ class CLASS:
             10, #Accept radius (m)
             0, #pass radius (m)
             0, #yaw (deg)
-            latitude,  
-            longitude,  
-            self.alt
-            ]  
-
-        self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print(msg)
+            float(latitude),  
+            float(longitude),  
+            float(self.ALTITUDE))
+        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        #print(msg)
+        return print("Going to waypoint")
 
     def distance_command(self, latitude, longitude):
         """
@@ -372,24 +385,23 @@ class CLASS:
         # Create a waypoint command
         command = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
 
-
         #parameter for waypoint
         LONG_SEND_WAYPOINT_parameter = [
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
+            UAS_mav.target_system,  #target_system
+            UAS_mav.target_component, #target_component
             command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
             0, #confirmation 
             0, #hold (s)
             10, #Accept radius (m)
             0, #pass radius (m)
             0, #yaw (deg)
-            latitude,  
-            longitude,  
-            self.alt
+            float(latitude),  
+            float(longitude),  
+            float(self.ALTITUDE)
             ]  
 
-        self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        msg = UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
         return print(msg)
     
     def servo_command(self, servo_x):
@@ -421,12 +433,12 @@ class CLASS:
             0 #empty
             ]  
 
-        self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
-        #msg = self.UAS_mav.recv_msg(msgid=MAVLINK_MSG_ID_COMMAND_ACK, blocking = True)
-        return print(f'GOING TO WAYPOINT')
+        #self.UAS_mav.mav.command_long_send(LONG_SEND_WAYPOINT_parameter)
+        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
+        return print('SERVO ACTIVATED')
 
     
-    def waypoint_reached (self, latitude_deg, longitude_deg ):
+    def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
         Check if the UAS has reached a specified waypoint.
 
@@ -441,15 +453,15 @@ class CLASS:
         distance = self.haversine(latitude_deg,longitude_deg )
 
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
-        while(distance > 7.5):
+        while(distance > radius):
 
             if(self.RTL_stat() == True):
 
-                while self.RTL_stat():
+                while (self.RTL_stat() == True & self.IS_AUTO() != TRUE):
                     pass
 
-                self.UAS_dk.simple_goto(LocationGlobal( latitude_deg, longitude_deg, self.alt ))
-                self.waypoint_reached( latitude_deg, longitude_deg )
+                self.waypoint_command(latitude_deg,longitude_deg)
+                self.waypoint_reached( latitude_deg, longitude_deg, radius )
                 break
              
             #distance between 2 points retuirn value in feet    
@@ -471,30 +483,9 @@ class CLASS:
         """
         nextWP_index = self.currWP_index + 1
         storedWP = None
-        nextWP = LocationGlobal( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.alt )
-
-        while self.currWP_index != len( self.waypoint_lap_latitude ):
-            if self.RTL_stat():
-                if storedWP is None:
-                    storedWP = LocationGlobal( self.waypoint_lap_latitude[ self.currWP_index ], self.waypoint_lap_longitude[ self.currWP_index ], self.alt )
-
-                while self.RTL_stat():
-                    pass
-
-                self.UAS_dk.simple_goto( storedWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ] )
-
-            else:
-                    
-                self.UAS_dk.simple_goto( nextWP )
-                self.waypoint_reached( self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_reached[ nextWP_index ] )
-
-                nextWP_index += 1
-                self.currWP_index += 1
-
-                if nextWP_index == len( self.waypoint_lap_latitude ):
-                    self.currWP_index = 0
-                    self.lap += 1
+        nextWP = [self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ]]
+        self.waypoint_command(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ])
+        self.waypoint_reached(self.waypoint_lap_latitude[ nextWP_index ], self.waypoint_lap_longitude[ nextWP_index ], self.WAYPOINT_RADIUS)
 
         return f"Lap number {self.lap} is complete"
 
@@ -542,7 +533,6 @@ class CLASS:
                 print(waypoint_lap_latitude [i])
             else:
                 print(waypoint_lap_latitude [i], end=", ")
-            
 
         print("\nLongitudes entered:")
         for i in range(number_of_coordinates):
@@ -551,7 +541,24 @@ class CLASS:
             else:
                 print(waypoint_lap_longitude[i], end=", ") 
     
-    def deliver_payload(self, servo_x, longitude, latitude):
+
+        while True:
+            try:
+                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                if response in [1, 2]:
+                    if (response ==2):
+                        self.user_waypoint_input()
+                    else:
+                        break
+                else:
+                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+            except ValueError as e:
+                print(e)
+    
+
+
+    def deliver_payload(self, servo_x, latitude, longitude):
         """
         Deliver a payload using a specified servo (not implemented).
 
@@ -565,15 +572,17 @@ class CLASS:
         """
         start = time.time()
 
+        self.waypoint_command(latitude,longitude)
+        self.waypoint_reached(latitude,longitude,self.PAYLOAD_RADIUS)
+        self.servo_command(servo_x)
         
-        #ENTER CODE HERE
         
         end = time.time()
         difference = end - start
         self.deliver_payload_time.append(difference)
 
 
-        return print("NOT IMPLEMENTED")
+        return print(f"Payload {servo_x} Delivered")
 
     def search_area_waypoint(self):
         """
@@ -584,28 +593,30 @@ class CLASS:
         :return: None
         """
         start = time.time()
-        for x in range(len(self.search_area_latitude)):
+        for x in range(len(self.search_area_latitude)-1):
             #go to wp
-            print(f"GOING TO SEARCH AREA WAYPOINT: {x}") 
-            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x])
+            print(f"############ GOING TO SEARCH AREA WAYPOINT: {x+1} ############") 
+            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x]) 
             
-            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt)
+            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],float(self.ALTITUDE))
             #self.UAS_dk.simple_goto( location )
             
             #call the waypoint reached
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x])
+            #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             #get attitide data
-            p1 = multiprocessing.Process(target=self.attitude())
+            #p1 = multiprocessing.Process(target=self.attitude())
+            self.attitude()
+            self.trigger_camera(f'image{x+1}.jpg')
             #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera(), args= (f"image{x}.jpg",))
+            #p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
             #start the execution and wait 
-            p1.start()
-            p2.start()
-            p1.join()
-            p2.join()
+            #p1.start()
+            #p2.start()
+            #p1.join()
+            #p2.join()
             #geotag
-            p3 = multiprocessing.Process(target = self.geotag(), args= (f"image{x}.jpg",))
-            p3.start()
+            self.geotag(f'image{x+1}.jpg')
+
         end = time.time()
         difference = end - start
         self.search_area_waypoint_time.append(difference)
