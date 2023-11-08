@@ -3,7 +3,7 @@ import os
 import math
 import multiprocessing
 import subprocess
-#import exiftool
+import exiftool
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
@@ -25,9 +25,10 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udpin:localhost:14551'
+        self.connection_string = 'udpin:localhost:14551' #Software in the loop
         #self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        
+        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
@@ -35,7 +36,7 @@ class CLASS:
         self.UAS_mav = mavutil.mavlink_connection(self.connection_string, baud=57600)
         self.UAS_mav.wait_heartbeat()
         print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
-        print("Mavlink Connected")
+        print("Mavlink Connected ")
         
 
         
@@ -153,6 +154,7 @@ class CLASS:
         self.haversine_time.append(difference)
         # feet conversion * earth radius * something
         return distance
+    
     def IS_ARMED(self):
         """
         Check if the UAS is "ARMED" mode.
@@ -184,14 +186,14 @@ class CLASS:
         """
         return self.UAS_dk.mode == "RTL"
 
-
-    def waypoint_command(self, latitude, longitude, seq, curr):
+    def spline_waypoint_command(self, latitude, longitude, seq):
         """
-        Define a waypoint command (not implemented).
+        Define a spline waypoint command.
 
         Args:
             latitude (float): The latitude coordinate.
             longitude (float): The longitude coordinate.
+            seq (int): The number sequence according to mission.
 
         Returns:
             None
@@ -199,7 +201,6 @@ class CLASS:
 
         command = dialect.MAV_CMD_NAV_SPLINE_WAYPOINT
 
-        print("ffd")
         message = dialect.MAVLink_mission_item_int_message(
             self.UAS_mav.target_system,  #target_system
             self.UAS_mav.target_component, #target_component
@@ -209,31 +210,54 @@ class CLASS:
             0,
             1, #auto continue 
             0, #hold (s)
-            10, #Accept radius (m)
-            10, #pass radius (m)
+            self.PAYLOAD_RADIUS, #Accept radius (m)
+            self.PAYLOAD_RADIUS, #pass radius (m)
             0, #yaw (deg)
             int(latitude*1e7),  
             int(longitude*1e7),
             self.ALTITUDE,
             0
             )
-        '''
-        # Send a waypoint command
-        msg = self.UAS_dk.message_factory.command_long_encode(
+
+        # Send the message
+        self.UAS_mav.mav.send(message)
+        #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
+        return print("Waypoint reached")
+    
+
+    def waypoint_command(self, latitude, longitude, seq):
+        """
+        Define a waypoint command.
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+            seq (int): The number sequence according to mission.
+
+        Returns:
+            None
+        """ 
+
+        command = dialect.MAV_CMD_NAV_WAYPOINT
+
+        message = dialect.MAVLink_mission_item_int_message(
+            self.UAS_mav.target_system,  #target_system
+            self.UAS_mav.target_component, #target_component
+            seq,
+            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
             0,
-            0,
-            mavutil.mavlink.MAV_CMD_NAV_SPLINE_WAYPOINT,
-            0,
-            float(0.0),
-            float(0.0),
-            float(0.0),
-            float(0.0),
-            int(latitude*1e7),
+            1, #auto continue 
+            0, #hold (s)
+            self.WAYPOINT_RADIUS, #Accept radius (m)
+            self.WAYPOINT_RADIUS, #pass radius (m)
+            math.nan, #yaw (deg)
+            int(latitude*1e7),  
             int(longitude*1e7),
-            float(self.ALTITUDE)
-        )
-        self.UAS_dk.send_mavlink(msg)
-        '''
+            self.ALTITUDE,
+            0
+            )
+
         # Send the message
         self.UAS_mav.mav.send(message)
         #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
@@ -265,6 +289,30 @@ class CLASS:
         
         return True
     
+    def response(self, keyword):
+        return print("-- Message Read " + str(self.UAS_mav.recv_match(type = keyword, blocking = True)))
+    
+
+    def count(self, waypoints):
+        self.UAS_mav.mav.mission_count_send(
+        self.UAS_mav.target_system,  #target_system
+        self.UAS_mav.target_component,#target_component
+        waypoints,#total number of commands in the mission
+        0 #0-main mission
+        )
+        
+
+    def mission_start(self):
+        command = mavutil.mavlink.MAV_CMD_MISSION_START
+        self.UAS_mav.mav.command_long_send(
+        self.UAS_mav.target_system,  #target_system
+        self.UAS_mav.target_component,#target_component
+        command,#command
+        0,0,0,0,0,0,0,0
+        )
+        return True
+
+
     def waypoint_lap( self ):
         """
         Define a sequence of waypoints to be followed by the UAS in a lap.
@@ -273,25 +321,21 @@ class CLASS:
             str: A message indicating lap completion.
 
         """
-        self.UAS_mav.mav.mission_count_send(
-        self.UAS_mav.target_system,  #target_system
-        self.UAS_mav.target_component,#target_component
-        4,0 
-        )
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0,1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],1,1)
+        self.count(len(self.waypoint_lap_latitude)+1)
+        print(len(self.waypoint_lap_latitude))
+        self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
 
-        #self.waypoint_reached(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ], self.WAYPOINT_RADIUS)
-        self.waypoint_command(self.waypoint_lap_latitude[ 1 ], self.waypoint_lap_longitude[ 1 ],2,1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 2 ], self.waypoint_lap_longitude[ 2 ],3,0)
-        self.UAS_dk.mode = VehicleMode("AUTO")
+        for wp in range(len(self.waypoint_lap_latitude)):
+            self.spline_waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
+            #self.waypoint_reached(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ], self.WAYPOINT_RADIUS)
 
-            #self.waypoint_command(-35.3627590, 149.1633438)
-            
-            #self.UAS_dk.simple_goto(LocationGlobalRelative(-35.3627590, 149.1633438))
-            #self.waypoint_reached(self.waypoint_lap_latitude[ curr_wp ], self.waypoint_lap_longitude[ curr_wp ], self.WAYPOINT_RADIUS)
+        self.mission_start()
+        self.response("MISSION_ACK")
+        for reached in range(len(self.waypoint_lap_latitude)):
+            self.response("MISSION_ITEM_REACHED")
+           
         
-        
+        print("DONE with lap")
         return f"Lap number {self.lap} is complete"
 
     def search_area_waypoint(self):
@@ -302,22 +346,18 @@ class CLASS:
 
         :return: None
         """
-        start = time.time()
-        self.UAS_mav.mav.mission_count_send(
-        self.UAS_mav.target_system,  #target_system
-        self.UAS_mav.target_component,#target_component
-        4,0 
-        )
-        for x in range(len(self.search_area_latitude)):
-            print(x)
-            #go to wp
-            print(f"############ GOING TO SEARCH AREA WAYPOINT: {x+1} ############") 
-            self.waypoint_command(self.search_area_latitude[x],self.search_area_longitude[x],x,x) 
-            self.UAS_dk.mode =VehicleMode("AUTO")
-            #location = LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],float(self.ALTITUDE))
-            #self.UAS_dk.simple_goto( location )
-            
-            #call the waypoint reached
+        start= time.time()
+        self.count(len(self.waypoint_lap_latitude)+1)
+        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
+
+        for wp in range(len(self.waypoint_lap_latitude)):
+            self.waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
+            #self.waypoint_reached(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ], self.WAYPOINT_RADIUS)
+
+        self.mission_start()
+        self.response("MISSION_ACK")
+        for reached in range(len(self.waypoint_lap_latitude)):
+            self.response("MISSION_ITEM_REACHED")
             #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             #get attitide data
             #p1 = multiprocessing.Process(target=self.attitude())
