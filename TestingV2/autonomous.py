@@ -28,7 +28,7 @@ class CLASS:
         self.connection_string = 'udpin:localhost:14551' #Software in the loop
         #self.connection_string = "/dev/ttyACM0" #usb to micro usb
         
-        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         print("Connected with DroneKit")
 
         #connecting to mavlink
@@ -87,12 +87,12 @@ class CLASS:
 
         #predefined search area value for Kawainui test
         self.search_area_latitude = [
-            -35.3623083, -35.3617606, -35.3617525, -35.3621956, 
+            -35.3616216, -35.3615691, -35.3621378
 
         ]
 
         self.search_area_longitude = [
-            149.1621797, 149.1621401, 149.1630390, 149.1630192, 
+            149.1639553, 149.1652964, 149.1655217
 
         ]
 
@@ -110,7 +110,40 @@ class CLASS:
         print("UAS IS NOW IN AUTO MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         '''
+    def trigger_camera(self, image_name):
+        """
+        Trigger the camera to capture an image.
 
+        This method triggers the camera to capture an image and saves it with the provided filename.
+
+        :param filename: The filename to use for the captured image.
+        :return: None
+        """
+        start = time.time()
+        print(f'{image_name} IS BEING TAKEN')
+        cmd = ('gphoto2', '--capture-image-and-download', '--filename', image_name)
+        self.subprocess_execute(cmd)
+        end = time.time()
+        difference = end - start
+        self.trigger_camera_time.append(difference)
+        return print(f'{image_name} Captured \n')
+
+    def subprocess_execute(self, command):
+        """
+        Execute a subprocess command with the provided arguments and record the execution time.
+
+        Args:
+            command (str): The subprocess command to execute.
+
+        Returns:
+            None
+        """
+        start = time.time()
+        subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        end = time.time()
+        difference = end - start
+        self.subprocess_execute_time.append(difference)
+    
     def toRadian(self, degree):
         """
         Convert from degree to radian.
@@ -222,7 +255,6 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
         #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
-        return print("Waypoint reached")
     
 
     def waypoint_command(self, latitude, longitude, seq):
@@ -261,7 +293,7 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
         #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
-        return print("Waypoint reached")
+      
 
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
@@ -322,7 +354,6 @@ class CLASS:
 
         """
         self.count(len(self.waypoint_lap_latitude)+1)
-        print(len(self.waypoint_lap_latitude))
         self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
 
         for wp in range(len(self.waypoint_lap_latitude)):
@@ -333,10 +364,9 @@ class CLASS:
         self.response("MISSION_ACK")
         for reached in range(len(self.waypoint_lap_latitude)):
             self.response("MISSION_ITEM_REACHED")
-           
-        
-        print("DONE with lap")
-        return f"Lap number {self.lap} is complete"
+        self.UAS_dk.commands.clear()
+        self.UAS_dk.commands.upload()
+        return print("DONE with lap")
 
     def search_area_waypoint(self):
         """
@@ -347,22 +377,24 @@ class CLASS:
         :return: None
         """
         start= time.time()
-        self.count(len(self.waypoint_lap_latitude)+1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-
-        for wp in range(len(self.waypoint_lap_latitude)):
-            self.waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            #self.waypoint_reached(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ], self.WAYPOINT_RADIUS)
-
-        self.mission_start()
-        self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)):
-            self.response("MISSION_ITEM_REACHED")
-            #self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
+        print('Now Conducting the search area')
+        self.UAS_dk.commands.clear()
+        self.UAS_dk.commands.upload()
+        print(self.UAS_dk.location.global_frame)
+        self.UAS_dk.mode = VehicleMode("GUIDED")
+        #self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[2],self.search_area_longitude[2], self.ALTITUDE))
+        for wp in range(len(self.search_area_latitude)):
+            target_locaton=LocationGlobalRelative(self.search_area_latitude[wp],self.search_area_longitude[wp], self.ALTITUDE)
+            self.UAS_dk.simple_goto(target_locaton)
+            self.waypoint_reached(self.search_area_latitude[wp],self.search_area_longitude[wp],self.PAYLOAD_RADIUS)
+            print(wp)
+            print(self.UAS_dk.location.global_frame)
+            #self.response("MISSION_ITEM_REACHED")
+            #self.waypoint_reached(self.search_area_latitude[wp],self.search_area_longitude[wp], self.SEARCH_AREA_RADIUS)
             #get attitide data
             #p1 = multiprocessing.Process(target=self.attitude())
             #self.attitude()
-            #self.trigger_camera(f'image{x+1}.jpg')
+            #self.trigger_camera(f'image{wp+1}.jpg')
             #take image
             #p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
             #start the execution and wait 

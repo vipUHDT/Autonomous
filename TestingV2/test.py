@@ -1,8 +1,11 @@
 import autonomous
 
 fc = autonomous.CLASS()
-fc.waypoint_lap()
+#fc.waypoint_lap()
 fc.search_area_waypoint()
+#fc.search_area_waypoint(1)
+#fc.search_area_waypoint(2)
+
 # fc.count(2)
 
 # fc.spline_waypoint_command(fc.waypoint_lap_latitude[0], fc.waypoint_lap_longitude[0], 0)
