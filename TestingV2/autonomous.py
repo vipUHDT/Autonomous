@@ -8,7 +8,7 @@ from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
 import pymavlink.dialects.v20.all as dialect
-
+from haversine import haversine, Unit
 class CLASS:
     def __init__(self):
         """
@@ -20,9 +20,9 @@ class CLASS:
         """
         #PARAMTERS
         self.ALTITUDE = 75.0
-        self.WAYPOINT_RADIUS = 7.5
-        self.PAYLOAD_RADIUS = 2
-        self.SEARCH_AREA_RADIUS = 2
+        self.WAYPOINT_RADIUS = 1
+        self.PAYLOAD_RADIUS = 1
+        self.SEARCH_AREA_RADIUS = 1
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = 'udpin:localhost:14551' #Software in the loop
@@ -40,15 +40,15 @@ class CLASS:
         
 
         
-        print('CREATING IMAGE DIRECTORY')
-        image_dir = f'image_{time.ctime(time.time())}'
-        print(f'MADE DIRECTORY {image_dir}')
-        os.mkdir(image_dir)
-        os.chdir(str(image_dir))
-        print(f'MOVED TO {image_dir} DIRECTORY')
-        print("CREATING TEST DATA FILE")
-        with open('Data_log.txt', "a") as file:
-                file.write("Time Log:\n")
+        # print('CREATING IMAGE DIRECTORY')
+        # image_dir = f'image_{time.ctime(time.time())}'
+        # print(f'MADE DIRECTORY {image_dir}')
+        # os.mkdir(image_dir)
+        # os.chdir(str(image_dir))
+        # print(f'MOVED TO {image_dir} DIRECTORY')
+        # print("CREATING TEST DATA FILE")
+        # with open('Data_log.txt', "a") as file:
+        #         file.write("Time Log:\n")
         
         # writing file variable
         self.attitude_time = []
@@ -79,20 +79,20 @@ class CLASS:
         self.lap = 0
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            -35.3623650,-35.3635315, -35.3627590
+            -35.3628465,-35.3629777, -35.3621116
         ]
         self.waypoint_lap_longitude = [
-            149.1661235,149.1636205, 149.1613438
+            149.1644059,149.1625927, 149.1632472
         ]
 
         #predefined search area value for Kawainui test
         self.search_area_latitude = [
-            -35.3616216, -35.3615691, -35.3621378
+            -35.3628465,-35.3629777, -35.3621116
 
         ]
 
         self.search_area_longitude = [
-            149.1639553, 149.1652964, 149.1655217
+            149.1644059,149.1625927, 149.1632472
 
         ]
 
@@ -157,7 +157,7 @@ class CLASS:
         pi = math.pi
         return degree * (pi / 180)
 
-    def haversine(self, lon1, lat1):
+    def haversine(self, lat1, lon1):
         """
         Use the Haversine formula to calculate the distance between two coordinates.
 
@@ -169,23 +169,21 @@ class CLASS:
             float: The distance between the two coordinates in meters.
         """
         start = time.time()
-        print(self.UAS_dk.location.global_frame)
-        earth_radius = 6371000
-        curr_location = self.UAS_dk.location.global_relative_frame
-        lat1 = self.toRadian(lat1)
-        lon1 = self.toRadian(lon1)
-        lat2 = self.toRadian(curr_location.lat)
-        lon2 = self.toRadian(curr_location.lon)
-        dlat = lat2- lat1
-        dlon = lon2 - lon1
-        a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2* math.atan2(math.sqrt(a), math.sqrt(1-a))
-        distance = earth_radius * c
+        curr_lat = 0
+        curr_lon = 0
+        message = self.UAS_mav.recv_match(type=[dialect.MAVLink_position_target_global_int_message.msgname,
+                                       dialect.MAVLink_global_position_int_message.msgname],
+                                 blocking=True)   
+        #print(message)
+        message = message.to_dict()
+        if message["mavpackettype"] == dialect.MAVLink_global_position_int_message.msgname:
+            curr_lat = message["lat"] * 1e-7
+            curr_lon = message["lon"] * 1e-7
+        print(f'{lat1},{lon1}')
+        distance = haversine((curr_lat * 1e-7,curr_lon * 1e-7),(lat1 * 1e-7,lon1 * 1e-7), unit = 'ft')
         end = time.time()
         difference = end - start
-
         self.haversine_time.append(difference)
-        # feet conversion * earth radius * something
         return distance
     
     def IS_ARMED(self):
@@ -380,15 +378,15 @@ class CLASS:
         print('Now Conducting the search area')
         self.UAS_dk.commands.clear()
         self.UAS_dk.commands.upload()
-        print(self.UAS_dk.location.global_frame)
+        #print(self.UAS_dk.location.global_frame)
         self.UAS_dk.mode = VehicleMode("GUIDED")
         #self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[2],self.search_area_longitude[2], self.ALTITUDE))
         for wp in range(len(self.search_area_latitude)):
             target_locaton=LocationGlobalRelative(self.search_area_latitude[wp],self.search_area_longitude[wp], self.ALTITUDE)
             self.UAS_dk.simple_goto(target_locaton)
             self.waypoint_reached(self.search_area_latitude[wp],self.search_area_longitude[wp],self.PAYLOAD_RADIUS)
-            print(wp)
-            print(self.UAS_dk.location.global_frame)
+            #print(wp)
+            #print(self.UAS_dk.location.global_frame)
             #self.response("MISSION_ITEM_REACHED")
             #self.waypoint_reached(self.search_area_latitude[wp],self.search_area_longitude[wp], self.SEARCH_AREA_RADIUS)
             #get attitide data
