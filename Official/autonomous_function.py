@@ -94,7 +94,7 @@ class CLASS:
             -157.7637121, -157.7638395, -157.7640112, -157.7641936,  
             -157.7643558, -157.7645986, -157.7642298, -157.7639160
         ]
-        self.user_waypoint_input()
+        #self.user_waypoint_input()
         '''
         print("AUTONOMOUS SCRIPT IS READY")
         while self.IS_ARMED != True:
