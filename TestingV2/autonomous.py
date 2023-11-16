@@ -20,9 +20,9 @@ class CLASS:
         """
         #PARAMTERS
         self.ALTITUDE = 25.0 #meters
-        self.WAYPOINT_RADIUS = 3 #meters
-        self.PAYLOAD_RADIUS = 3 #meters
-        self.SEARCH_AREA_RADIUS = 3 #meters
+        self.WAYPOINT_RADIUS = 3 #feet
+        self.PAYLOAD_RADIUS = 3 #feet
+        self.SEARCH_AREA_RADIUS = 3 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -97,19 +97,20 @@ class CLASS:
         ]
 
         #self.user_waypoint_input()
-        '''
-        print("AUTONOMOUS SCRIPT IS READY")
-        while self.IS_ARMED != True:
-            print("Waiting for arming....")
-            time.sleep(0.5)
+        
+        # print("AUTONOMOUS SCRIPT IS READY")
+        # while self.IS_ARMED != True:
+        #     print("Waiting for arming....")
+        #     print(self.IS_ARMED)
+        #     time.sleep(0.5)
 
-        print("UAS IS NOW ARMED")
-        while self.IS_AUTO != True:
-            print("Waiting for UAS to be in AUTO MODE.........")
-            time.sleep(0.5)
-        print("UAS IS NOW IN AUTO MODE")
-        print("!------------------ MISSION STARTING ----------------------!")
-        '''
+        # print("UAS IS NOW ARMED")
+        # while self.IS_GUIDED != True:
+        #     print("Waiting for UAS to be in GUIDED MODE.........")
+        #     time.sleep(0.5)
+        # print("UAS IS NOW IN GUIDED MODE")
+        # print("!------------------ MISSION STARTING ----------------------!")
+        
     
     def attitude(self):
         """
@@ -256,14 +257,10 @@ class CLASS:
         Returns:
             float: The distance between the two coordinates in meters.
         """
-        start = time.time()
         current_location = self.UAS_dk.location.global_relative_frame
-
-
         distance = haversine((current_location.lat,current_location.lon),(lat1,lon1), unit = 'ft')
         end = time.time()
-        difference = end - start
-        self.haversine_time.append(difference)
+
         return distance
     
     def IS_ARMED(self):
@@ -274,8 +271,9 @@ class CLASS:
             bool: True if the UAS is ARMED, False otherwise.
         """  
         if self.UAS_dk.armed:
-            return print("It is armed")
-        return print("It is not armed")
+            
+            return True
+        return False
 
     def IS_AUTO(self):
         """
@@ -285,8 +283,20 @@ class CLASS:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
         if self.UAS_dk.mode == "AUTO":
-            return print('It is in auto' )
-        return print("Not in auto")
+            return True
+        return False
+    
+    def IS_GUIDED(self):
+        """
+        Check if the UAS is in "AUTO" mode.
+
+        Returns:
+            bool: True if the UAS is in AUTO, False otherwise.
+        """        
+        if self.UAS_dk.mode == "GUIDED":
+            return True
+        return False
+
 
     def RTL_stat( self ):
         """
@@ -295,7 +305,10 @@ class CLASS:
         Returns:
             bool: True if the UAS is in RTL mode, False otherwise.
         """
-        return self.UAS_dk.mode == "RTL"
+        if self.UAS_dk.mode == "RTL":
+            return True
+        return False
+
 
     def spline_waypoint_command(self, latitude, longitude, seq):
         """
@@ -484,7 +497,6 @@ class CLASS:
         """
         start= time.time()
         print('Now Conducting the search area')
-       
 
         for x in range(len(self.search_area_latitude)):
             self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
@@ -531,25 +543,25 @@ class CLASS:
             except ValueError:
                 print("Enter an integer")
 
-        waypoint_lap_latitude  = array('i', [0] * number_of_coordinates)
-        waypoint_lap_longitude = array('i', [0] * number_of_coordinates)
+        waypoint_lap_latitude  = array('f', [0] * number_of_coordinates)
+        waypoint_lap_longitude = array('f', [0] * number_of_coordinates)
 
         # Ask for longitude and latitude coordinates and put them in their respective arrays
         for i in range(number_of_coordinates):
             while 1:
                 # Check for non-integer values
                 try:
-                    waypoint_lap_latitude [i] = int(input(f"Enter latitude {i + 1}:\n"))
+                    waypoint_lap_latitude [i] = float(input(f"Enter latitude {i + 1}:\n"))
                     break
-                except ValueError:
+                except FloatingPointError:
                     print("Coordinate must be an integer")
 
             while 1:
                 # Check for non-integer values
                 try:
-                    waypoint_lap_longitude[i] = int(input(f"Enter longitude {i + 1}:\n"))
+                    waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
                     break
-                except ValueError:
+                except FloatingPointError:
                     print("Coordinate must be an integer")
 
         # Print the coordinates in the array
@@ -560,27 +572,83 @@ class CLASS:
             else:
                 print(waypoint_lap_latitude [i], end=", ")
 
+                while True:
+                    try:
+                        response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
+                        if response in [1, 2]:
+                            if (response ==2):
+                                self.user_waypoint_input()
+                            else:
+                                break
+                        else:
+                            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+
+                    except ValueError as e:
+                        print(e)
+            
+
         print("\nLongitudes entered:")
         for i in range(number_of_coordinates):
             if (i == number_of_coordinates-1):
                 print(waypoint_lap_longitude[i])
             else:
                 print(waypoint_lap_longitude[i], end=", ") 
-    
 
-        while True:
+        #------------------------------------------------------------#
+        # Display parameters to the user and give option to change the parameters
+
+        while 1:
+            print(f"\nSET PARAMETERS ARE:\n")
+            print(f"ALTITUDE: {self.ALTITUDE}")
+            print(f"WAYPOINT_RADIUS: {self.WAYPOINT_RADIUS}")
+            print(f"PAYLOAD_RADIUS: {self.PAYLOAD_RADIUS}")
+            print(f"SEARCH_AREA_RADIUS: {self.SEARCH_AREA_RADIUS}")
+
             try:
-                response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                if response in [1, 2]:
-                    if (response ==2):
-                        self.user_waypoint_input()
-                    else:
-                        break
-                else:
-                    raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
+                # Ask user if the parameters are ok
+                response = int(input("\nARE THESE PARAMETERS OK?\n1-YES or 2-NO\n"))
+                if (response in [1, 2]):
+                    if (response == 1):
+                        break # Parameters are ok
+                    if (response == 2):
 
-            except ValueError as e:
-                print(e)
+                        # Ask user to enter new altitude
+                        while 1:
+                            try:
+                                self.ALTITUDE = float(input("\nENTER NEW ALTITUDE\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+                    
+                        # Ask user to enter new waypoint_radius
+                        while 1:
+                            try:
+                                self.WAYPOINT_RADIUS = float(input("\nENTER NEW WAYPOINT_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                        # Ask user to enter new payload_radius
+                        while 1:
+                            try:
+                                self.PAYLOAD_RADIUS = float(input("\nENTER NEW PAYLOAD_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                        # Ask user to enter new search_area_radius
+                        while 1:
+                            try:
+                                self.SEARCH_AREA_RADIUS = float(input("\nENTER NEW SEARCH_AREA_RADIUS\n"))
+                                break
+                            except ValueError:
+                                print("\nInvalid Response. Please enter a number.\n")
+
+                else:
+                    raise ValueError("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # response not 1 or 2
+
+            except ValueError:
+                print("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # invalid response
 
     def sum(self, arr):
         """
@@ -625,7 +693,6 @@ class CLASS:
         avg_attitude = self.avg(self.attitude_time)
         avg_deliver_payload = self.avg(self.deliver_payload_time)
         avg_geotag = self.avg(self.geotag_time)
-        avg_haversine = self.avg(self.haversine_time)
         avg_search_area_waypoint = self.avg(self.search_area_waypoint_time)
         avg_subprocess_execute = self.avg(self.subprocess_execute_time)
         avg_trigger_camera = self.avg(self.trigger_camera_time)
@@ -634,7 +701,6 @@ class CLASS:
         sum_attitude = self.sum(self.attitude_time)
         sum_deliver_payload = self.sum(self.deliver_payload_time)
         sum_geotag = self.sum(self.geotag_time)
-        sum_haversine = self.sum(self.haversine_time)
         sum_search_area_waypoint = self.sum(self.search_area_waypoint_time)
         sum_subprocess_execute = self.sum(self.subprocess_execute_time)
         sum_trigger_camera = self.sum(self.trigger_camera_time)
@@ -645,7 +711,6 @@ class CLASS:
             ("attitude", self.attitude_time, avg_attitude, sum_attitude),
             ("deliver_payload", self.deliver_payload_time, avg_deliver_payload,sum_deliver_payload),
             ("geotag", self.geotag_time, avg_geotag,sum_geotag),
-            ("haversine", self.haversine_time, avg_haversine,sum_haversine),
             ("search_area_waypoint", self.search_area_waypoint_time, avg_search_area_waypoint,sum_search_area_waypoint),
             ("subprocess_execute", self.subprocess_execute_time, avg_subprocess_execute,sum_subprocess_execute),
             ("trigger_camera", self.trigger_camera_time, avg_trigger_camera,sum_trigger_camera),
