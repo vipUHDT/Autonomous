@@ -9,6 +9,7 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGloba
 from array import array
 import pymavlink.dialects.v20.all as dialect
 from haversine import haversine, Unit
+
 class CLASS:
     def __init__(self):
         """
@@ -37,8 +38,6 @@ class CLASS:
         self.UAS_mav.wait_heartbeat()
         print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
         print("Mavlink Connected ")
-        
-
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -96,7 +95,7 @@ class CLASS:
 
         ]
 
-        #self.user_waypoint_input()
+        self.user_waypoint_input()
         
         # print("AUTONOMOUS SCRIPT IS READY")
         # while self.IS_ARMED != True:
@@ -183,29 +182,25 @@ class CLASS:
         tag_lat_command = ('exiftool', '-overwrite_original', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', str(image_name))
         tag_long_command = ('exiftool','-overwrite_original', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', str(image_name))
         tag_alt_command = ('exiftool','-overwrite_original', '-exif:gpsAltitude=' + '\'' + str(self.drone_sensory[5]) + '\'', str(image_name))
-        self.image_number += 1 #doesnt work
+        self.image_number += 1 
         #executing the tag command in ssh
         '''subprocess.run(tag_pyr_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         subprocess.run(tag_lat_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         subprocess.run(tag_long_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         subprocess.run(tag_alt_command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)'''
                 
-        
         p1 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_pyr_command,))
         p2 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_lat_command,))
         p3 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_long_command,))
         p4 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_alt_command,))
         
-
         p1.start()
         p2.start()
         p3.start()
         p4.start()
         
-
         end = time.time()
         difference = end - start
-
         self.geotag_time.append(difference)
         return print(f"{image_name} GEOTAGGED")
 
@@ -383,7 +378,6 @@ class CLASS:
 
         # Send the message
         self.UAS_mav.mav.send(message)
-        #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
       
     def servo_command(self, servo_x, lat, lon):
         """
@@ -506,7 +500,6 @@ class CLASS:
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
 
-                
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #self.attitude()
