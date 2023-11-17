@@ -97,18 +97,16 @@ class CLASS:
 
         #self.user_waypoint_input()
         
-        # print("AUTONOMOUS SCRIPT IS READY")
-        # while self.IS_ARMED != True:
-        #     print("Waiting for arming....")
-        #     print(self.IS_ARMED)
-        #     time.sleep(0.5)
-
-        # print("UAS IS NOW ARMED")
-        # while self.IS_GUIDED != True:
-        #     print("Waiting for UAS to be in GUIDED MODE.........")
-        #     time.sleep(0.5)
-        # print("UAS IS NOW IN GUIDED MODE")
-        # print("!------------------ MISSION STARTING ----------------------!")
+        print("AUTONOMOUS SCRIPT IS READY")
+        while (self.IS_ARMED() != True):
+            print("waiting to be armed")
+            print(self.UAS_dk.armed)
+            time.sleep(1)
+        while (self.IS_GUIDED()  != True):
+            print("waiting to be in GUIDED mode")
+            print(self.UAS_dk.mode)
+            time.sleep(1)
+        print("!------------------ MISSION STARTING ----------------------!")
         
     
     def attitude(self):
@@ -302,7 +300,7 @@ class CLASS:
         Returns:
             bool: True if the UAS is in RTL mode, False otherwise.
         """
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
 
         if self.UAS_dk.mode == "RTL":
             return True
@@ -420,17 +418,24 @@ class CLASS:
         """
         #distance between 2 points retuirn value in feet    
         distance = self.haversine(latitude_deg,longitude_deg )
-
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
-        while(distance > radius):
 
+        while(distance > radius):
+            if(self.RTL_stat() == True):
+                print("IN RTL MODE")
+
+                while (self.RTL_stat() == True):
+                    print("IN RTL MODE")
+                    time.sleep(.5)
+                    pass
+                self.UAS_dk.simple_goto(LocationGlobalRelative(latitude_deg,longitude_deg,self.ALTITUDE))
+                self.waypoint_reached( latitude_deg, longitude_deg, radius )
+                break
             #distance between 2 points retuirn value in feet    
             distance = self.haversine(latitude_deg, longitude_deg)            
             print(f"Distance to waypoint: {distance}")
             time.sleep(.5)
-
-        print("REACHED WAYPOINT")
-        
+        print("REACHED WAYPOINT") 
         return True
     
     def response(self, keyword):
