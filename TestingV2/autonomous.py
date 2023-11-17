@@ -95,7 +95,7 @@ class CLASS:
 
         ]
 
-        self.user_waypoint_input()
+        #self.user_waypoint_input()
         
         # print("AUTONOMOUS SCRIPT IS READY")
         # while self.IS_ARMED != True:
@@ -265,8 +265,8 @@ class CLASS:
         Returns:
             bool: True if the UAS is ARMED, False otherwise.
         """  
-        if self.UAS_dk.armed:
-            
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        if self.UAS_dk.armed == True:
             return True
         return False
 
@@ -276,7 +276,8 @@ class CLASS:
 
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
-        """        
+        """    
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)    
         if self.UAS_dk.mode == "AUTO":
             return True
         return False
@@ -288,6 +289,7 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         if self.UAS_dk.mode == "GUIDED":
             return True
         return False
@@ -300,6 +302,8 @@ class CLASS:
         Returns:
             bool: True if the UAS is in RTL mode, False otherwise.
         """
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+
         if self.UAS_dk.mode == "RTL":
             return True
         return False
@@ -379,7 +383,7 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
       
-    def servo_command(self, servo_x, lat, lon):
+    def deliver_payload_command(self, servo_x, lat, lon):
         """
         Activate a servo to deliver payload (not implemented).
 
@@ -392,8 +396,8 @@ class CLASS:
         # Create a waypoint command
         print(f"UAS HEADING TO {lat},{lon} TO DROP PAYLOAD")
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-        print(LocationGlobalRelative(lat,lon,75))
-        self.UAS_dk.simple_goto(LocationGlobalRelative(lat,lon,75))
+        self.UAS_dk.mode = VehicleMode("GUIDED") 
+        self.UAS_dk.simple_goto(LocationGlobalRelative(lat,lon,self.ALTITUDE))
         self.waypoint_reached(lat,lon, self.PAYLOAD_RADIUS)
 
         command = mavutil.mavlink.MAV_CMD_DO_SET_SERVO
@@ -430,8 +434,9 @@ class CLASS:
         return True
     
     def response(self, keyword):
-        return print("-- Message Read " + str(self.UAS_mav.recv_match(type = keyword, blocking = True)))
-    
+        message = self.UAS_mav.recv_match(type=keyword, blocking=True)
+        print("-- Message Read " + str(message))
+        return message
 
     def count(self, waypoints):
         self.UAS_mav.mav.mission_count_send(
@@ -451,7 +456,40 @@ class CLASS:
         0,0,0,0,0,0,0,0
         )
         return True
+    
+    def mission_clear(self):
+        self.UAS_mav.mav.mission_clear_all_send(
+        self.UAS_mav.target_system,  # System ID of the vehicle
+        self.UAS_mav.target_component  # Component ID
+        )
 
+
+    def spline_waypoint_lap( self ):
+        """
+        Define a sequence of waypoints to be followed by the UAS in a lap.
+
+        Returns:
+            str: A message indicating lap completion.
+
+        """
+        self.count(len(self.waypoint_lap_latitude)+1)
+        self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
+        start = time.time()
+        for wp in range(len(self.waypoint_lap_latitude)):
+            self.spline_waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
+            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
+            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
+            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
+        self.mission_start()
+        self.response("MISSION_ACK")
+        for reached in range(len(self.waypoint_lap_latitude)):
+            self.response("MISSION_ITEM_REACHED")
+        end = time.time()
+        difference = end - start
+        self.waypoint_lap_time.append(difference)
+        self.lap = self.lap + 1
+        return print(f"DONE WITH LAP {self.lap - 1}")
 
     def waypoint_lap( self ):
         """
@@ -460,26 +498,47 @@ class CLASS:
         Returns:
             str: A message indicating lap completion.
 
-        """
-        #self.UAS_dk.mode = VehicleMode("AUTO")
-        #self.count(len(self.waypoint_lap_latitude)+1)
-        #self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
+        """        
+        self.count(len(self.waypoint_lap_latitude)+1)
+        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
         start = time.time()
         for wp in range(len(self.waypoint_lap_latitude)):
-            #self.spline_waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-            print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
-        #self.mission_start()
-        #self.response("MISSION_ACK")
-        # for reached in range(len(self.waypoint_lap_latitude)):
-        #     self.response("MISSION_ITEM_REACHED")
+            self.waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
+            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
+            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
+            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
+        self.mission_start()
+        self.response("MISSION_ACK")
+        for reached in range(len(self.waypoint_lap_latitude)):
+            self.response("MISSION_ITEM_REACHED")
         end = time.time()
-        diff = end - start
         difference = end - start
         self.waypoint_lap_time.append(difference)
-        return print("DONE WITH LAP")
+        self.lap = self.lap + 1
+        return print(f"DONE WITH LAP {self.lap - 1}")
+    
+    def dk_waypoint_lap( self ):
+        """
+        Define a sequence of waypoints to be followed by the UAS in a lap.
+
+        Returns:
+            str: A message indicating lap completion.
+
+        """       
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        self.UAS_dk.mode = VehicleMode("GUIDED") 
+        start = time.time()
+        for wp in range(len(self.waypoint_lap_latitude)):
+            self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+            print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
+            self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
+        end = time.time()
+        difference = end - start
+        self.waypoint_lap_time.append(difference)
+        self.lap = self.lap + 1
+        return print(f"DONE WITH LAP {self.lap - 1}")
 
     def search_area_waypoint(self):
         """
@@ -491,12 +550,14 @@ class CLASS:
         """
         start= time.time()
         print('Now Conducting the search area')
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        self.UAS_dk.mode = VehicleMode("GUIDED")
 
         for x in range(len(self.search_area_latitude)):
             self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(x)
-            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],75))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],75))
+            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
 
