@@ -58,6 +58,8 @@ class CLASS:
         self.subprocess_execute_time = []
         self.trigger_camera_time = []
         self.waypoint_lap_time = []
+        self.dk_waypoint_lap_time = []
+
 
         #connect the camera
         print("Connecting to the camera")
@@ -75,7 +77,8 @@ class CLASS:
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
-        self.lap = 0
+        self.lap = 1
+        self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
             -35.3621903,-35.3635377, -35.3623828
@@ -401,8 +404,8 @@ class CLASS:
         command = mavutil.mavlink.MAV_CMD_DO_SET_SERVO
         self.UAS_mav.mav.command_long_send(self.UAS_mav.target_system, self.UAS_mav.target_component,command,0,servo_x,1000,0,0,0,0,0)
         time.sleep(15)
-        #msg = self.UAS_mav.recv_msg(type = 'COMMAND_ACK', blocking = True)
-        return print("PAYLOAD DELIVERED")
+        self.payload = self.payload + 1
+        return print(f"PAYLOAD {self.payload - 1} DELIVERED")
 
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
@@ -541,7 +544,7 @@ class CLASS:
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
         end = time.time()
         difference = end - start
-        self.waypoint_lap_time.append(difference)
+        self.dk_waypoint_lap_time.append(difference)
         self.lap = self.lap + 1
         return print(f"DONE WITH LAP {self.lap - 1}")
 
@@ -756,6 +759,8 @@ class CLASS:
         avg_subprocess_execute = self.avg(self.subprocess_execute_time)
         avg_trigger_camera = self.avg(self.trigger_camera_time)
         avg_waypoint_lap = self.avg(self.waypoint_lap_time)
+        avg_dk_waypoint_lap = self.avg(self.waypoint_lap_time)
+
         #sum calcualtion
         sum_attitude = self.sum(self.attitude_time)
         sum_deliver_payload = self.sum(self.deliver_payload_time)
@@ -764,6 +769,8 @@ class CLASS:
         sum_subprocess_execute = self.sum(self.subprocess_execute_time)
         sum_trigger_camera = self.sum(self.trigger_camera_time)
         sum_waypoint_lap = self.sum(self.waypoint_lap_time)
+        sum_dk_waypoint_lap = self.sum(self.dk_waypoint_lap_time)
+
 
             
         data_averages_and_time = [
@@ -774,6 +781,8 @@ class CLASS:
             ("subprocess_execute", self.subprocess_execute_time, avg_subprocess_execute,sum_subprocess_execute),
             ("trigger_camera", self.trigger_camera_time, avg_trigger_camera,sum_trigger_camera),
             ("waypoint_lap", self.waypoint_lap_time, avg_waypoint_lap,sum_waypoint_lap)
+            ("dk_waypoint_lap", self.dk_waypoint_lap_time, avg_dk_waypoint_lap,sum_dk_waypoint_lap)
+
         ]
         with open('Data_log.txt', 'a') as file:
                 for data_name, data_values, data_average, data_sum in data_averages_and_time:
