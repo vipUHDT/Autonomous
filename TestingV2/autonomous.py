@@ -23,7 +23,7 @@ class CLASS:
         self.ALTITUDE = 25.0 #meters
         self.WAYPOINT_RADIUS = 3 #feet
         self.PAYLOAD_RADIUS = 3 #feet
-        self.SEARCH_AREA_RADIUS = 3 #feet
+        self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -87,7 +87,6 @@ class CLASS:
             149.165060,149.1638051, 149.1634618
         ]
 
-        #predefined search area value for Kawainui test
         self.search_area_latitude = [
             -35.3621903,-35.3635377, -35.3623828
 
@@ -442,11 +441,26 @@ class CLASS:
         return True
     
     def response(self, keyword):
+        """
+        Receives a specific type of message from the UAS.
+
+        Args:
+            keyword (str): The type of message to receive.
+
+        Returns:
+            message: The received message.
+        """
         message = self.UAS_mav.recv_match(type=keyword, blocking=True)
         print("-- Message Read " + str(message))
         return message
 
     def count(self, waypoints):
+        """
+        Sends a mission count command to the UAS to set the total number of commands in the mission.
+
+        Args:
+            waypoints (int): The total number of commands in the mission.
+        """
         self.UAS_mav.mav.mission_count_send(
         self.UAS_mav.target_system,  #target_system
         self.UAS_mav.target_component,#target_component
@@ -456,6 +470,12 @@ class CLASS:
         
 
     def mission_start(self):
+        """
+        Sends a mission start command to the UAS.
+
+        Returns:
+            bool: True if the mission start command is sent successfully.
+        """
         command = mavutil.mavlink.MAV_CMD_MISSION_START
         self.UAS_mav.mav.command_long_send(
         self.UAS_mav.target_system,  #target_system
@@ -466,6 +486,12 @@ class CLASS:
         return True
     
     def mission_clear(self):
+        """
+        Sends a mission clear command to the UAS.
+
+        Returns:
+            None
+        """
         self.UAS_mav.mav.mission_clear_all_send(
         self.UAS_mav.target_system,  # System ID of the vehicle
         self.UAS_mav.target_component  # Component ID
@@ -474,7 +500,7 @@ class CLASS:
 
     def spline_waypoint_lap( self ):
         """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
+        Define a sequence of spline waypoints to be followed by the UAS in a lap.
 
         Returns:
             str: A message indicating lap completion.
@@ -528,7 +554,7 @@ class CLASS:
     
     def dk_waypoint_lap( self ):
         """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
+        Define a sequence of waypoints using DroneKit to be followed by the UAS in a lap.
 
         Returns:
             str: A message indicating lap completion.
@@ -550,8 +576,8 @@ class CLASS:
 
     def search_area_waypoint(self):
         """
-        Define a search area waypoint.
-
+        Define a search area waypoint. It will use the waypoint_reached() function to determine if the UAS arrived at location
+        and then collect UAS attitude data, trigger camera and geotag image.
         This method defines a search area waypoint.
 
         :return: None
