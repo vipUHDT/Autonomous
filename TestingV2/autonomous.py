@@ -482,13 +482,13 @@ class CLASS:
        
         self.mission_start()
         self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)*3+1):
-            self.response("MISSION_ITEM_REACHED")
+        # for reached in range(len(self.waypoint_lap_latitude)*3):
+        #     self.response("MISSION_ITEM_REACHED")
         self.payload = self.payload + 1
         end = time.time()
         difference = end - start
         self.payload_delivery_time.append(difference)
-        return print(f"PAYLOAD {self.payload - 1} DELIVERED")
+        return print(f"PAYLOADS  DELIVERED")
 
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
