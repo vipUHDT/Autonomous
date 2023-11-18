@@ -22,14 +22,14 @@ class CLASS:
         #PARAMTERS
         self.ALTITUDE = 25.0 #meters
         self.WAYPOINT_RADIUS = 3 #feet
-        self.PAYLOAD_RADIUS = 3 #feet
-        self.SEARCH_AREA_RADIUS = 3 #feet
+        self.PAYLOAD_RADIUS = 2 #feet
+        self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
         #self.connection_string = "/dev/ttyACM0" #usb to micro usb
         
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
         print("Connected with DroneKit")
 
         #connecting to mavlink
@@ -59,6 +59,7 @@ class CLASS:
         self.trigger_camera_time = []
         self.waypoint_lap_time = []
         self.dk_waypoint_lap_time = []
+        self.payload_delivery_time = []
 
 
         #connect the camera
@@ -87,7 +88,6 @@ class CLASS:
             149.165060,149.1638051, 149.1634618
         ]
 
-        #predefined search area value for Kawainui test
         self.search_area_latitude = [
             -35.3621903,-35.3635377, -35.3623828
 
@@ -98,18 +98,20 @@ class CLASS:
 
         ]
 
-        #self.user_waypoint_input()
+        # self.user_waypoint_input()
         
-        print("AUTONOMOUS SCRIPT IS READY")
-        while (self.IS_ARMED() != True):
-            print("waiting to be armed")
-            print(self.UAS_dk.armed)
-            time.sleep(1)
-        while (self.IS_GUIDED()  != True):
-            print("waiting to be in GUIDED mode")
-            print(self.UAS_dk.mode)
-            time.sleep(1)
-        print("!------------------ MISSION STARTING ----------------------!")
+        # print("AUTONOMOUS SCRIPT IS READY")
+        # while (self.IS_ARMED() != True):
+        #     print("waiting to be armed")
+        #     print(self.UAS_dk.armed)
+        #     time.sleep(1)
+        # print("UAS IS NOW ARMED")
+        # while (self.IS_GUIDED()  != True):
+        #     print("waiting to be in GUIDED mode")
+        #     print(self.UAS_dk.mode)
+        #     time.sleep(1)
+        # print("UAS IS NOW IN GUIDED MODE")
+        # print("!------------------ MISSION STARTING ----------------------!")
         
     
     def attitude(self):
@@ -255,8 +257,6 @@ class CLASS:
         """
         current_location = self.UAS_dk.location.global_relative_frame
         distance = haversine((current_location.lat,current_location.lon),(lat1,lon1), unit = 'ft')
-        end = time.time()
-
         return distance
     
     def IS_ARMED(self):
@@ -383,8 +383,68 @@ class CLASS:
 
         # Send the message
         self.UAS_mav.mav.send(message)
+
+    def servo_command(self, servo_x, seq):
+        """
+        Define a waypoint command.
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+            seq (int): The number sequence according to mission.
+
+        Returns:
+            None
+        """ 
+
+        command = dialect.MAV_CMD_DO_SET_SERVO
+
+        message = dialect.MAVLink_mission_item_int_message(
+            self.UAS_mav.target_system,  #target_system
+            self.UAS_mav.target_component, #target_component
+            seq,
+            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+            0,
+            1, #auto continue 
+            0, #hold (s)
+            servo_x,1200,0,0,0,0,0
+            )
+        # Send the message
+        self.UAS_mav.mav.send(message)
+
+        
+    def loiter_command(self, time, seq):
+        """
+        Define a waypoint command.
+
+        Args:
+            latitude (float): The latitude coordinate.
+            longitude (float): The longitude coordinate.
+            seq (int): The number sequence according to mission.
+
+        Returns:
+            None
+        """ 
+
+        command = dialect.MAV_CMD_NAV_LOITER_TIME
+
+        message = dialect.MAVLink_mission_item_int_message(
+            self.UAS_mav.target_system,  #target_system
+            self.UAS_mav.target_component, #target_component
+            seq,
+            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+            0,
+            1, #auto continue 
+            0, #hold (s)
+            time,0,1,0,0,0,0
+            )
+
+        # Send the message
+        self.UAS_mav.mav.send(message)
       
-    def deliver_payload_command(self, servo_x, lat, lon):
+    def deliver_payload_command(self):
         """
         Activate a servo to deliver payload (not implemented).
 
@@ -394,17 +454,40 @@ class CLASS:
         Returns:
             None
         """
+        #connecting to mavlink
+        print('Connecting MavLink')
+        self.UAS_mav = mavutil.mavlink_connection(self.connection_string, baud=57600)
+        self.UAS_mav.wait_heartbeat()
+        print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
+        print("Mavlink Connected ")
         # Create a waypoint command
-        print(f"UAS HEADING TO {lat},{lon} TO DROP PAYLOAD")
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-        self.UAS_dk.mode = VehicleMode("GUIDED") 
-        self.UAS_dk.simple_goto(LocationGlobalRelative(lat,lon,self.ALTITUDE))
-        self.waypoint_reached(lat,lon, self.PAYLOAD_RADIUS)
+        start = time.time()
+        print(f"UAS HEADING TO DROP PAYLOAD")
+        self.count(len(self.waypoint_lap_latitude)*3+1)
+        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
+        sequence = 1
+        counter = 0
 
-        command = mavutil.mavlink.MAV_CMD_DO_SET_SERVO
-        self.UAS_mav.mav.command_long_send(self.UAS_mav.target_system, self.UAS_mav.target_component,command,0,servo_x,1000,0,0,0,0,0)
-        time.sleep(15)
+        while(counter < len(self.waypoint_lap_latitude)):
+            self.waypoint_command(self.waypoint_lap_latitude[ counter ], self.waypoint_lap_longitude[ counter ],sequence)
+            sequence = sequence+1 
+            print(sequence)      
+            self.servo_command(5,sequence)
+            sequence = sequence+1
+            print(sequence)
+            self.loiter_command(15,sequence)
+            sequence = sequence+1  
+            print(sequence)
+            counter = counter + 1
+       
+        self.mission_start()
+        self.response("MISSION_ACK")
+        for reached in range(len(self.waypoint_lap_latitude)*3+1):
+            self.response("MISSION_ITEM_REACHED")
         self.payload = self.payload + 1
+        end = time.time()
+        difference = end - start
+        self.payload_delivery_time.append(difference)
         return print(f"PAYLOAD {self.payload - 1} DELIVERED")
 
     
@@ -442,11 +525,26 @@ class CLASS:
         return True
     
     def response(self, keyword):
+        """
+        Receives a specific type of message from the UAS.
+
+        Args:
+            keyword (str): The type of message to receive.
+
+        Returns:
+            message: The received message.
+        """
         message = self.UAS_mav.recv_match(type=keyword, blocking=True)
         print("-- Message Read " + str(message))
         return message
 
     def count(self, waypoints):
+        """
+        Sends a mission count command to the UAS to set the total number of commands in the mission.
+
+        Args:
+            waypoints (int): The total number of commands in the mission.
+        """
         self.UAS_mav.mav.mission_count_send(
         self.UAS_mav.target_system,  #target_system
         self.UAS_mav.target_component,#target_component
@@ -456,6 +554,12 @@ class CLASS:
         
 
     def mission_start(self):
+        """
+        Sends a mission start command to the UAS.
+
+        Returns:
+            bool: True if the mission start command is sent successfully.
+        """
         command = mavutil.mavlink.MAV_CMD_MISSION_START
         self.UAS_mav.mav.command_long_send(
         self.UAS_mav.target_system,  #target_system
@@ -466,6 +570,12 @@ class CLASS:
         return True
     
     def mission_clear(self):
+        """
+        Sends a mission clear command to the UAS.
+
+        Returns:
+            None
+        """
         self.UAS_mav.mav.mission_clear_all_send(
         self.UAS_mav.target_system,  # System ID of the vehicle
         self.UAS_mav.target_component  # Component ID
@@ -474,7 +584,7 @@ class CLASS:
 
     def spline_waypoint_lap( self ):
         """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
+        Define a sequence of spline waypoints to be followed by the UAS in a lap.
 
         Returns:
             str: A message indicating lap completion.
@@ -528,7 +638,7 @@ class CLASS:
     
     def dk_waypoint_lap( self ):
         """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
+        Define a sequence of waypoints using DroneKit to be followed by the UAS in a lap.
 
         Returns:
             str: A message indicating lap completion.
@@ -548,15 +658,15 @@ class CLASS:
         self.lap = self.lap + 1
         return print(f"DONE WITH LAP {self.lap - 1}")
 
-    def search_area_waypoint(self):
+    def search_area_command(self):
         """
-        Define a search area waypoint.
-
+        Define a search area waypoint. It will use the waypoint_reached() function to determine if the UAS arrived at location
+        and then collect UAS attitude data, trigger camera and geotag image.
         This method defines a search area waypoint.
 
         :return: None
         """
-        start= time.time()
+        start = time.time()
         print('Now Conducting the search area')
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         self.UAS_dk.mode = VehicleMode("GUIDED")
@@ -571,8 +681,6 @@ class CLASS:
 
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
-            #self.attitude()
-            #self.trigger_camera(f'image{x+1}.jpg')
             #take image
             p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
             #start the execution and wait 
@@ -753,34 +861,33 @@ class CLASS:
         """
         #average calculation
         avg_attitude = self.avg(self.attitude_time)
-        avg_deliver_payload = self.avg(self.deliver_payload_time)
         avg_geotag = self.avg(self.geotag_time)
         avg_search_area_waypoint = self.avg(self.search_area_waypoint_time)
         avg_subprocess_execute = self.avg(self.subprocess_execute_time)
         avg_trigger_camera = self.avg(self.trigger_camera_time)
         avg_waypoint_lap = self.avg(self.waypoint_lap_time)
-        avg_dk_waypoint_lap = self.avg(self.waypoint_lap_time)
+        avg_dk_waypoint_lap = self.avg(self.dk_waypoint_lap_time)
+        avg_payload_delivery_time = self.avg(self.payload_delivery_time)
 
         #sum calcualtion
         sum_attitude = self.sum(self.attitude_time)
-        sum_deliver_payload = self.sum(self.deliver_payload_time)
         sum_geotag = self.sum(self.geotag_time)
         sum_search_area_waypoint = self.sum(self.search_area_waypoint_time)
         sum_subprocess_execute = self.sum(self.subprocess_execute_time)
         sum_trigger_camera = self.sum(self.trigger_camera_time)
         sum_waypoint_lap = self.sum(self.waypoint_lap_time)
         sum_dk_waypoint_lap = self.sum(self.dk_waypoint_lap_time)
-
+        sum_payload_delivery_time = self.sum(self.payload_delivery_time)
 
             
         data_averages_and_time = [
             ("attitude", self.attitude_time, avg_attitude, sum_attitude),
-            ("deliver_payload", self.deliver_payload_time, avg_deliver_payload,sum_deliver_payload),
+            ("deliver_payload", self.deliver_payload_time, avg_payload_delivery_time,sum_payload_delivery_time ),
             ("geotag", self.geotag_time, avg_geotag,sum_geotag),
             ("search_area_waypoint", self.search_area_waypoint_time, avg_search_area_waypoint,sum_search_area_waypoint),
             ("subprocess_execute", self.subprocess_execute_time, avg_subprocess_execute,sum_subprocess_execute),
             ("trigger_camera", self.trigger_camera_time, avg_trigger_camera,sum_trigger_camera),
-            ("waypoint_lap", self.waypoint_lap_time, avg_waypoint_lap,sum_waypoint_lap)
+            ("waypoint_lap", self.waypoint_lap_time, avg_waypoint_lap,sum_waypoint_lap),
             ("dk_waypoint_lap", self.dk_waypoint_lap_time, avg_dk_waypoint_lap,sum_dk_waypoint_lap)
 
         ]
