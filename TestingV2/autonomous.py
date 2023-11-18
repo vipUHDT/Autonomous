@@ -574,7 +574,7 @@ class CLASS:
         self.lap = self.lap + 1
         return print(f"DONE WITH LAP {self.lap - 1}")
 
-    def search_area_waypoint(self):
+    def search_area_command(self):
         """
         Define a search area waypoint. It will use the waypoint_reached() function to determine if the UAS arrived at location
         and then collect UAS attitude data, trigger camera and geotag image.
@@ -582,7 +582,7 @@ class CLASS:
 
         :return: None
         """
-        start= time.time()
+        start = time.time()
         print('Now Conducting the search area')
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         self.UAS_dk.mode = VehicleMode("GUIDED")
@@ -597,8 +597,6 @@ class CLASS:
 
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
-            #self.attitude()
-            #self.trigger_camera(f'image{x+1}.jpg')
             #take image
             p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
             #start the execution and wait 
