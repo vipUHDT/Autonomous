@@ -935,7 +935,7 @@ class CLASS:
 
 
 
-        return print("万歳")
+        return print("UAS TERMINATED")
 
 
 
