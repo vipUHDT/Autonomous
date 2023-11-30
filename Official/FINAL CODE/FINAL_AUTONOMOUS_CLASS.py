@@ -98,7 +98,7 @@ class CLASS:
 
         ]
 
-        # self.user_waypoint_input()
+        self.user_input()
         
         # print("AUTONOMOUS SCRIPT IS READY")
         # while (self.IS_ARMED() != True):
@@ -697,7 +697,7 @@ class CLASS:
 
         return print("UAS COMPLETED SEARCH THE AREA")
     
-    def user_waypoint_input(self):
+    def user_input(self):
         """
         Allow the user to input a set of latitude and longitude coordinates for waypoints.
 
@@ -747,7 +747,7 @@ class CLASS:
                         response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
                         if response in [1, 2]:
                             if (response ==2):
-                                self.user_waypoint_input()
+                                self.user_input()
                             else:
                                 break
                         else:
