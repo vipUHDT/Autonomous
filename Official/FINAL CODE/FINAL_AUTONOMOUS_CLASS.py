@@ -26,11 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        #self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        
-        #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
-        print("Connected with DroneKit")
+        #self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to mavlink
         print('Connecting MavLink')
@@ -38,6 +35,9 @@ class CLASS:
         self.UAS_mav.wait_heartbeat()
         print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
         print("Mavlink Connected ")
+
+        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
+        print("Connected with DroneKit")
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -100,18 +100,18 @@ class CLASS:
 
         self.user_input()
         
-        # print("AUTONOMOUS SCRIPT IS READY")
-        # while (self.IS_ARMED() != True):
-        #     print("waiting to be armed")
-        #     print(self.UAS_dk.armed)
-        #     time.sleep(1)
-        # print("UAS IS NOW ARMED")
-        # while (self.IS_GUIDED()  != True):
-        #     print("waiting to be in GUIDED mode")
-        #     print(self.UAS_dk.mode)
-        #     time.sleep(1)
-        # print("UAS IS NOW IN GUIDED MODE")
-        # print("!------------------ MISSION STARTING ----------------------!")
+        print("AUTONOMOUS SCRIPT IS READY")
+        while (self.IS_ARMED() != True):
+            print("waiting to be armed")
+            print(self.UAS_dk.armed)
+            time.sleep(1)
+        print("UAS IS NOW ARMED")
+        while (self.IS_GUIDED()  != True):
+            print("waiting to be in GUIDED mode")
+            print(self.UAS_dk.mode)
+            time.sleep(1)
+        print("UAS IS NOW IN GUIDED MODE")
+        print("!------------------ MISSION STARTING ----------------------!")
         
     
     def attitude(self):
