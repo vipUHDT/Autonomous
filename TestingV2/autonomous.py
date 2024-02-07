@@ -27,7 +27,7 @@ class CLASS:
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        #self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
         
         #self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
         print("Connected with DroneKit")

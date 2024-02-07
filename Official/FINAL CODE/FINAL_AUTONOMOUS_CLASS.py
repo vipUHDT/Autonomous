@@ -730,7 +730,7 @@ class CLASS:
                 # Check for non-integer values
                 try:
                     waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
-                    break
+                    break 
                 except FloatingPointError:
                     print("Coordinate must be an integer")
 
