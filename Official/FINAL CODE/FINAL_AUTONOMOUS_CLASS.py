@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        #self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to mavlink
         print('Connecting MavLink')
@@ -82,23 +82,25 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            -35.3621903,-35.3635377, -35.3623828
+            # -35.3621903,-35.3635377, -35.3623828
+            # 21.4002469, 21.4004105, 21.4007551
         ]
         self.waypoint_lap_longitude = [
-            149.165060,149.1638051, 149.1634618
+            # 149.165060,149.1638051, 149.1634618
+            # -157.7643961, -157.7638637, -157.7639884
         ]
 
         self.search_area_latitude = [
-            -35.3621903,-35.3635377, -35.3623828
+            21.4004167, 21.4004842, 21.4005017, 21.4004417
 
         ]
 
         self.search_area_longitude = [
-            149.165060,149.1638051, 149.1634618
+            -157.7644242, -157.7644578, -157.7643988, -157.7643612
 
         ]
 
-        self.user_input()
+        # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
         while (self.IS_ARMED() != True):
@@ -506,7 +508,7 @@ class CLASS:
         distance = self.haversine(latitude_deg,longitude_deg )
         #checking is UAS reached within 15 feet in diameter of the desired coordinate desitination
 
-        while(distance > radius):
+        while(distance >= radius):
             if(self.RTL_stat() == True):
                 print("IN RTL MODE")
 
@@ -713,15 +715,15 @@ class CLASS:
             except ValueError:
                 print("Enter an integer")
 
-        waypoint_lap_latitude  = array('f', [0] * number_of_coordinates)
-        waypoint_lap_longitude = array('f', [0] * number_of_coordinates)
+        self.waypoint_lap_latitude  = array('f', [0] * number_of_coordinates)
+        self.waypoint_lap_longitude = array('f', [0] * number_of_coordinates)
 
         # Ask for longitude and latitude coordinates and put them in their respective arrays
         for i in range(number_of_coordinates):
             while 1:
                 # Check for non-integer values
                 try:
-                    waypoint_lap_latitude [i] = float(input(f"Enter latitude {i + 1}:\n"))
+                    self.waypoint_lap_latitude[i] = float(input(f"Enter latitude {i + 1}:\n"))
                     break
                 except FloatingPointError:
                     print("Coordinate must be an integer")
@@ -729,7 +731,7 @@ class CLASS:
             while 1:
                 # Check for non-integer values
                 try:
-                    waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
+                    self.waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
                     break 
                 except FloatingPointError:
                     print("Coordinate must be an integer")
@@ -738,9 +740,9 @@ class CLASS:
         print("\nLatitudes entered:")
         for i in range(number_of_coordinates):
             if (i == number_of_coordinates-1):
-                print(waypoint_lap_latitude [i])
+                print(self.waypoint_lap_latitude [i])
             else:
-                print(waypoint_lap_latitude [i], end=", ")
+                print(self.waypoint_lap_latitude [i], end=", ")
 
                 while True:
                     try:
@@ -760,9 +762,9 @@ class CLASS:
         print("\nLongitudes entered:")
         for i in range(number_of_coordinates):
             if (i == number_of_coordinates-1):
-                print(waypoint_lap_longitude[i])
+                print(self.waypoint_lap_longitude[i])
             else:
-                print(waypoint_lap_longitude[i], end=", ") 
+                print(self.waypoint_lap_longitude[i], end=", ") 
 
         #------------------------------------------------------------#
         # Display parameters to the user and give option to change the parameters
