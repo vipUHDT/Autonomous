@@ -9,6 +9,7 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGloba
 from array import array
 import pymavlink.dialects.v20.all as dialect
 from haversine import haversine, Unit
+from goprocam import GoProCamera, constants
 
 class CLASS:
     def __init__(self):
@@ -48,6 +49,8 @@ class CLASS:
         print("CREATING TEST DATA FILE")
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
+
+        go_pro = GoProCamera.GoPro()
         
         # writing file variable
         self.attitude_time = []
@@ -82,32 +85,32 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            # -35.3621903,-35.3635377, -35.3623828
-            # 21.4002469, 21.4004105, 21.4007551
+            21.4008762
+            # 21.4009349
         ]
         self.waypoint_lap_longitude = [
-            # 149.165060,149.1638051, 149.1634618
-            # -157.7643961, -157.7638637, -157.7639884
+            -157.7647729
+            # -157.764608
         ]
 
         self.search_area_latitude = [
-            21.4004167, 21.4004842, 21.4005017, 21.4004417
-
+            21.4007988
+            # 21.4008375
         ]
 
         self.search_area_longitude = [
-            -157.7644242, -157.7644578, -157.7643988, -157.7643612
-
+            -157.7647327
+            # -157.764811
         ]
 
         # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
-        while (self.IS_ARMED() != True):
-            print("waiting to be armed")
-            print(self.UAS_dk.armed)
-            time.sleep(1)
-        print("UAS IS NOW ARMED")
+        # while (self.IS_ARMED() != True):
+        #     print("waiting to be armed")
+        #     print(self.UAS_dk.armed)
+        #     time.sleep(1)
+        # print("UAS IS NOW ARMED")
         while (self.IS_GUIDED()  != True):
             print("waiting to be in GUIDED mode")
             print(self.UAS_dk.mode)
@@ -210,7 +213,10 @@ class CLASS:
         return print(f"{image_name} GEOTAGGED")
 
 
-    
+    def trigger_goPro( self, image_name ):
+        print( f'{image_name} is being taken' )
+        go_pro.take_photo(timer = 1)
+        go_pro
     def trigger_camera(self, image_name):
         """
         Trigger the camera to capture an image.
