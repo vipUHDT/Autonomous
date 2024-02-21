@@ -9,7 +9,6 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGloba
 from array import array
 import pymavlink.dialects.v20.all as dialect
 from haversine import haversine, Unit
-from goprocam import GoProCamera, constants
 
 class CLASS:
     def __init__(self):
@@ -49,8 +48,6 @@ class CLASS:
         print("CREATING TEST DATA FILE")
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
-
-        go_pro = GoProCamera.GoPro()
         
         # writing file variable
         self.attitude_time = []
@@ -213,10 +210,6 @@ class CLASS:
         return print(f"{image_name} GEOTAGGED")
 
 
-    def trigger_goPro( self, image_name ):
-        print( f'{image_name} is being taken' )
-        go_pro.take_photo(timer = 1)
-        go_pro
     def trigger_camera(self, image_name):
         """
         Trigger the camera to capture an image.
