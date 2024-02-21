@@ -50,7 +50,7 @@ class CLASS:
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
 
-        self.go_pro = GoProCamera.GoPro()
+        go_pro = GoProCamera.GoPro()
         
         # writing file variable
         self.attitude_time = []
@@ -216,8 +216,8 @@ class CLASS:
     def trigger_goPro( self, image_name ):
         print( f'{image_name} is being taken' )
 
-        self.take_photo(timer = 1)
-        self.downloadLastMedia( custom_filename = image_name )
+        self.go_pro.take_photo(timer = 1)
+        self.go_pro.downloadLastMedia( custom_filename = image_name )
 
         print( f'{image_name} captured' )
         
