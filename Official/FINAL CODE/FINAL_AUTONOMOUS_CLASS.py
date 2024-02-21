@@ -50,7 +50,7 @@ class CLASS:
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
 
-        go_pro = GoProCamera.GoPro()
+        self.go_pro = GoProCamera.GoPro()
         
         # writing file variable
         self.attitude_time = []
