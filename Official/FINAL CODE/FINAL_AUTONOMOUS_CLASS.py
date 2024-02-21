@@ -50,7 +50,7 @@ class CLASS:
         with open('Data_log.txt', "a") as file:
                 file.write("Time Log:\n")
 
-        go_pro = GoProCamera.GoPro()
+        self.go_pro = GoProCamera.GoPro()
         
         # writing file variable
         self.attitude_time = []
@@ -215,8 +215,12 @@ class CLASS:
 
     def trigger_goPro( self, image_name ):
         print( f'{image_name} is being taken' )
-        go_pro.take_photo(timer = 1)
-        go_pro
+
+        self.take_photo(timer = 1)
+        self.downloadLastMedia( custom_filename = image_name )
+
+        print( f'{image_name} captured' )
+        
     def trigger_camera(self, image_name):
         """
         Trigger the camera to capture an image.
@@ -690,7 +694,7 @@ class CLASS:
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
+            p2 = multiprocessing.Process(target=self.trigger_goPro, args= (f"image{x+1}.jpg",))
             #start the execution and wait 
             p1.start()
             p2.start()
