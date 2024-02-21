@@ -220,6 +220,9 @@ class CLASS:
         self.go_pro.downloadLastMedia( custom_filename = image_name )
 
         print( f'{image_name} captured' )
+
+    def goPro_whichCam( self ):
+        self.go_pro.whichCam()
         
     def trigger_camera(self, image_name):
         """
