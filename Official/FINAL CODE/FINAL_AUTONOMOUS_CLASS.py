@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to mavlink
         print('Connecting MavLink')
@@ -38,6 +38,8 @@ class CLASS:
 
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
         print("Connected with DroneKit")
+
+        self.servo_command( 1, 800 )
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -63,10 +65,10 @@ class CLASS:
 
 
         #connect the camera
-        print("Connecting to the camera")
-        self.command = ["gphoto2", "--auto-detect"]
-        #self.subprocess_execute(self.command)
-        print('Camera Connected')
+        # print("Connecting to the camera")
+        # self.command = ["gphoto2", "--auto-detect"]
+        # #self.subprocess_execute(self.command)
+        # print('Camera Connected')
 
         #declaring initial variable
         self.pitch = 0.0
@@ -108,11 +110,11 @@ class CLASS:
         #     print(self.UAS_dk.armed)
         #     time.sleep(1)
         # print("UAS IS NOW ARMED")
-        while (self.IS_GUIDED()  != True):
-            print("waiting to be in GUIDED mode")
-            print(self.UAS_dk.mode)
-            time.sleep(1)
-        print("UAS IS NOW IN GUIDED MODE")
+        # while (self.IS_GUIDED()  != True):
+        #     print("waiting to be in GUIDED mode")
+        #     print(self.UAS_dk.mode)
+        #     time.sleep(1)
+        # print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
     
@@ -385,34 +387,24 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
 
-    def servo_command(self, servo_x, seq):
-        """
-        Define a waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_DO_SET_SERVO
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+    def servo_command(self, servo_x, time):
+        print( "Dropping Payload" )
+        msg = self.UAS_dk.message_factory.command_long_encode(
+            self.UAS_mav.target_system,
+            self.UAS_mav.target_component,
+            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
             0,
-            1, #auto continue 
-            0, #hold (s)
-            servo_x,1200,0,0,0,0,0
-            )
-        # Send the message
-        self.UAS_mav.mav.send(message)
+            servo_x + 8,
+            time,
+            0,
+            0,
+            0,
+            0,
+            0
+        )
+
+        self.UAS_dk.send_mavlink( msg )
+        print( "Payload dropped" )
 
         
     def loiter_command(self, time, seq):
