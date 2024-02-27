@@ -39,7 +39,6 @@ class CLASS:
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
         print("Connected with DroneKit")
 
-        self.servo_command( 1, 800 )
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -84,11 +83,11 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            # 21.4008762
+            21.4008762
             # 21.4009349
         ]
         self.waypoint_lap_longitude = [
-            # -157.7647729
+            -157.7647729
             # -157.764608
         ]
 
