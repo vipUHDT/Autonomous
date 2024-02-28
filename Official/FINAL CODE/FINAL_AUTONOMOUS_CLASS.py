@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to mavlink
         print('Connecting MavLink')
@@ -38,6 +38,7 @@ class CLASS:
 
         self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
         print("Connected with DroneKit")
+
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -63,10 +64,10 @@ class CLASS:
 
 
         #connect the camera
-        print("Connecting to the camera")
-        self.command = ["gphoto2", "--auto-detect"]
-        #self.subprocess_execute(self.command)
-        print('Camera Connected')
+        # print("Connecting to the camera")
+        # self.command = ["gphoto2", "--auto-detect"]
+        # #self.subprocess_execute(self.command)
+        # print('Camera Connected')
 
         #declaring initial variable
         self.pitch = 0.0
@@ -91,13 +92,21 @@ class CLASS:
         ]
 
         self.search_area_latitude = [
-            21.4007988
+            # 21.4007988
             # 21.4008375
         ]
 
         self.search_area_longitude = [
-            -157.7647327
+            # -157.7647327
             # -157.764811
+        ]
+
+        self.payload_delivery_latitude = [
+
+        ]
+
+        self.payload_deliver_longitude = [
+
         ]
 
         # self.user_input()
@@ -108,11 +117,11 @@ class CLASS:
         #     print(self.UAS_dk.armed)
         #     time.sleep(1)
         # print("UAS IS NOW ARMED")
-        while (self.IS_GUIDED()  != True):
-            print("waiting to be in GUIDED mode")
-            print(self.UAS_dk.mode)
-            time.sleep(1)
-        print("UAS IS NOW IN GUIDED MODE")
+        # while (self.IS_GUIDED()  != True):
+        #     print("waiting to be in GUIDED mode")
+        #     print(self.UAS_dk.mode)
+        #     time.sleep(1)
+        # print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
     
@@ -385,34 +394,24 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
 
-    def servo_command(self, servo_x, seq):
-        """
-        Define a waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_DO_SET_SERVO
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
+    def servo_command(self, servo_x, position):
+        print( "Dropping Payload" )
+        msg = self.UAS_dk.message_factory.command_long_encode(
+            self.UAS_mav.target_system,
+            self.UAS_mav.target_component,
+            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
             0,
-            1, #auto continue 
-            0, #hold (s)
-            servo_x,1200,0,0,0,0,0
-            )
-        # Send the message
-        self.UAS_mav.mav.send(message)
+            servo_x + 8,
+            position,
+            0,
+            0,
+            0,
+            0,
+            0
+        )
+
+        self.UAS_dk.send_mavlink( msg )
+        print( "Payload dropped" )
 
         
     def loiter_command(self, time, seq):
@@ -446,51 +445,25 @@ class CLASS:
         self.UAS_mav.mav.send(message)
       
     def deliver_payload_command(self):
-        """
-        Activate a servo to deliver payload (not implemented).
 
-        Args:
-            servo_x (int): The servo number to be activated.
+        print( "Starting Payload Delivery Mission" )
 
-        Returns:
-            None
-        """
-        #connecting to mavlink
-        print('Connecting MavLink')
-        self.UAS_mav = mavutil.mavlink_connection(self.connection_string, baud=57600)
-        self.UAS_mav.wait_heartbeat()
-        print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
-        print("Mavlink Connected ")
-        # Create a waypoint command
-        start = time.time()
-        print(f"UAS HEADING TO DROP PAYLOAD")
-        self.count(len(self.waypoint_lap_latitude)*3+1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        sequence = 1
-        counter = 0
+        for i in self.payload_delivery_latitude:
+            print( f"Heading to payload #{i + 1}" )
+            currPayloadCoord = LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.altitude )
+            self.UAS_dk.simple_goto( currPayloadCoord )
+            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
-        while(counter < len(self.waypoint_lap_latitude)):
-            self.waypoint_command(self.waypoint_lap_latitude[ counter ], self.waypoint_lap_longitude[ counter ],sequence)
-            sequence = sequence+1 
-            print(sequence)      
-            self.servo_command(5,sequence)
-            sequence = sequence+1
-            print(sequence)
-            self.loiter_command(15,sequence)
-            sequence = sequence+1  
-            print(sequence)
-            counter = counter + 1
-       
-        self.mission_start()
-        self.response("MISSION_ACK")
-        # for reached in range(len(self.waypoint_lap_latitude)*3):
-        #     self.response("MISSION_ITEM_REACHED")
-        self.payload = self.payload + 1
-        end = time.time()
-        difference = end - start
-        self.payload_delivery_time.append(difference)
-        return print(f"PAYLOADS  DELIVERED")
+            time.sleep( 5 )
 
+            self.servo_command( i, 2000 )
+            print( f"Payload #{i + 1} Delivered" )
+
+            print( "Performing Waypoint Lap" )
+            self.dk_waypoint_lap()
+            print( "Waypoint Lap completed " )
+
+        print( "Payload Delivery Mission Completed" )
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
