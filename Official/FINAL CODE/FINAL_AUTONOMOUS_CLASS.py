@@ -84,22 +84,30 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4008762
+            # 21.4008762
             # 21.4009349
         ]
         self.waypoint_lap_longitude = [
-            -157.7647729
+            # -157.7647729
             # -157.764608
         ]
 
         self.search_area_latitude = [
-            21.4007988
+            # 21.4007988
             # 21.4008375
         ]
 
         self.search_area_longitude = [
-            -157.7647327
+            # -157.7647327
             # -157.764811
+        ]
+
+        self.payload_delivery_latitude = [
+
+        ]
+
+        self.payload_deliver_longitude = [
+
         ]
 
         # self.user_input()
@@ -387,7 +395,7 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
 
-    def servo_command(self, servo_x, time):
+    def servo_command(self, servo_x, position):
         print( "Dropping Payload" )
         msg = self.UAS_dk.message_factory.command_long_encode(
             self.UAS_mav.target_system,
@@ -395,7 +403,7 @@ class CLASS:
             mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
             0,
             servo_x + 8,
-            time,
+            position,
             0,
             0,
             0,
@@ -438,51 +446,25 @@ class CLASS:
         self.UAS_mav.mav.send(message)
       
     def deliver_payload_command(self):
-        """
-        Activate a servo to deliver payload (not implemented).
 
-        Args:
-            servo_x (int): The servo number to be activated.
+        print( "Starting Payload Delivery Mission" )
 
-        Returns:
-            None
-        """
-        #connecting to mavlink
-        print('Connecting MavLink')
-        self.UAS_mav = mavutil.mavlink_connection(self.connection_string, baud=57600)
-        self.UAS_mav.wait_heartbeat()
-        print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
-        print("Mavlink Connected ")
-        # Create a waypoint command
-        start = time.time()
-        print(f"UAS HEADING TO DROP PAYLOAD")
-        self.count(len(self.waypoint_lap_latitude)*3+1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        sequence = 1
-        counter = 0
+        for i in self.payload_delivery_latitude:
+            print( f"Heading to payload #{i + 1}" )
+            currPayloadCoord = LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.altitude )
+            self.UAS_dk.simple_goto( currPayloadCoord )
+            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
-        while(counter < len(self.waypoint_lap_latitude)):
-            self.waypoint_command(self.waypoint_lap_latitude[ counter ], self.waypoint_lap_longitude[ counter ],sequence)
-            sequence = sequence+1 
-            print(sequence)      
-            self.servo_command(5,sequence)
-            sequence = sequence+1
-            print(sequence)
-            self.loiter_command(15,sequence)
-            sequence = sequence+1  
-            print(sequence)
-            counter = counter + 1
-       
-        self.mission_start()
-        self.response("MISSION_ACK")
-        # for reached in range(len(self.waypoint_lap_latitude)*3):
-        #     self.response("MISSION_ITEM_REACHED")
-        self.payload = self.payload + 1
-        end = time.time()
-        difference = end - start
-        self.payload_delivery_time.append(difference)
-        return print(f"PAYLOADS  DELIVERED")
+            time.sleep( 5 )
 
+            self.servo_command( i, 2000 )
+            print( f"Payload #{i + 1} Delivered" )
+
+            print( "Performing Waypoint Lap" )
+            self.dk_waypoint_lap()
+            print( "Waypoint Lap completed " )
+
+        print( "Payload Delivery Mission Completed" )
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
