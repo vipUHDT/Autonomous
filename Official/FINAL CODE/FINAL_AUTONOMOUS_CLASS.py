@@ -29,16 +29,11 @@ class CLASS:
         # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
         self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
-        #connecting to mavlink
-        print('Connecting MavLink')
-        self.UAS_mav = mavutil.mavlink_connection(self.connection_string, baud=57600)
-        self.UAS_mav.wait_heartbeat()
-        print("hearbeat from system {system %u compenent %u}" %(self.UAS_mav.target_system, self.UAS_mav.target_component))
-        print("Mavlink Connected ")
+        #connecting to Mavlink
+        self.connect_to_mavlink()
 
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True, heartbeat_timeout= 120)
-        print("Connected with DroneKit")
-
+        #Connect to DroneKit
+        self.connect_to_dronekit()
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -124,7 +119,22 @@ class CLASS:
         # print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
-    
+    def connect_to_mavlink( self ):
+        print( "Connecting to Mavlink" )
+
+        self.UAS_mav = mavutil.mavlink_connection( self.connection_string, baud = 57600 )
+        self.UAS_mav.wait_heartbeat()
+        print( "Heartbeat from sustem {system %u component %u }" %( self.UAS_mav.target_system, self.UAS_mac.target_component ) )
+
+        print( "Connected to Mavlink" )
+
+    def connect_to_dronekit( self ):
+        print( "Connecting to DroneKit" )
+
+        self.UAS_dk = connect( self.connection_string, baud = 57600, wait_ready = True, hearbeat_timeout = 120 )
+
+        print( "Connected to DroneKit ")
+
     def attitude(self):
         """
         Retrieve attitude and GPS information.
@@ -395,6 +405,9 @@ class CLASS:
         self.UAS_mav.mav.send(message)
 
     def servo_command(self, servo_x, position):
+        #Connect to MavLink
+        self.connect_to_mavlink()
+
         print( "Dropping Payload" )
         msg = self.UAS_dk.message_factory.command_long_encode(
             self.UAS_mav.target_system,
@@ -618,18 +631,27 @@ class CLASS:
             str: A message indicating lap completion.
 
         """       
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+        #Connecto to DroneKit
+        self.connect_to_dronekit()
+
         self.UAS_dk.mode = VehicleMode("GUIDED") 
+
         start = time.time()
+
         for wp in range(len(self.waypoint_lap_latitude)):
             self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
             self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
+        
         end = time.time()
+        
         difference = end - start
+        
         self.dk_waypoint_lap_time.append(difference)
+        
         self.lap = self.lap + 1
+        
         return print(f"DONE WITH LAP {self.lap - 1}")
 
     def search_area_command(self):
@@ -642,11 +664,8 @@ class CLASS:
         """
         start = time.time()
         print('Now Conducting the search area')
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-        self.UAS_dk.mode = VehicleMode("GUIDED")
 
         for x in range(len(self.search_area_latitude)):
-            self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(x)
             print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
             self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
@@ -662,6 +681,7 @@ class CLASS:
             p2.start()
             p1.join()
             p2.join()
+
             #geotag
             self.geotag(f'image{x+1}.jpg')
 
