@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to Mavlink
         self.connect_to_mavlink()
@@ -107,15 +107,15 @@ class CLASS:
         # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
-        while (self.IS_ARMED() != True):
-            print("waiting to be armed")
-            print(self.UAS_dk.armed)
-            time.sleep(1)
+        # while (self.IS_ARMED() != True):
+        #     print("waiting to be armed")
+        #     print(self.UAS_dk.armed)
+        #     time.sleep(1)
         print("UAS IS NOW ARMED")
-        while (self.IS_GUIDED()  != True):
-            print("waiting to be in GUIDED mode")
-            print(self.UAS_dk.mode)
-            time.sleep(1)
+        # while (self.IS_GUIDED()  != True):
+        #     print("waiting to be in GUIDED mode")
+        #     print(self.UAS_dk.mode)
+        #     time.sleep(1)
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
@@ -406,7 +406,7 @@ class CLASS:
 
     def servo_command(self, servo_x, position):
         #Connect to MavLink
-        self.connect_to_mavlink()
+        # self.connect_to_mavlink()
 
         print( "Dropping Payload" )
         msg = self.UAS_dk.message_factory.command_long_encode(
