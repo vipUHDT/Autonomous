@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #connecting to Mavlink
         self.connect_to_mavlink()
@@ -78,22 +78,22 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4008762
-            # 21.4009349
+            21.4008762,
+            21.4009349
         ]
         self.waypoint_lap_longitude = [
-            -157.7647729
-            # -157.764608
+            -157.7647729,
+            -157.764608
         ]
 
         self.search_area_latitude = [
-            # 21.4007988
-            # 21.4008375
+            21.4007988,
+            21.4008375
         ]
 
         self.search_area_longitude = [
-            # -157.7647327
-            # -157.764811
+            -157.7647327,
+            -157.764811
         ]
 
         self.payload_delivery_latitude = [
@@ -107,16 +107,16 @@ class CLASS:
         # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
-        # while (self.IS_ARMED() != True):
-        #     print("waiting to be armed")
-        #     print(self.UAS_dk.armed)
-        #     time.sleep(1)
-        # print("UAS IS NOW ARMED")
-        # while (self.IS_GUIDED()  != True):
-        #     print("waiting to be in GUIDED mode")
-        #     print(self.UAS_dk.mode)
-        #     time.sleep(1)
-        # print("UAS IS NOW IN GUIDED MODE")
+        while (self.IS_ARMED() != True):
+            print("waiting to be armed")
+            print(self.UAS_dk.armed)
+            time.sleep(1)
+        print("UAS IS NOW ARMED")
+        while (self.IS_GUIDED()  != True):
+            print("waiting to be in GUIDED mode")
+            print(self.UAS_dk.mode)
+            time.sleep(1)
+        print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
     def connect_to_mavlink( self ):
@@ -124,14 +124,14 @@ class CLASS:
 
         self.UAS_mav = mavutil.mavlink_connection( self.connection_string, baud = 57600 )
         self.UAS_mav.wait_heartbeat()
-        print( "Heartbeat from sustem {system %u component %u }" %( self.UAS_mav.target_system, self.UAS_mac.target_component ) )
+        print( "Heartbeat from sustem {system %u component %u }" %( self.UAS_mav.target_system, self.UAS_mav.target_component ) )
 
         print( "Connected to Mavlink" )
 
     def connect_to_dronekit( self ):
         print( "Connecting to DroneKit" )
 
-        self.UAS_dk = connect( self.connection_string, baud = 57600, wait_ready = True, hearbeat_timeout = 120 )
+        self.UAS_dk = connect( self.connection_string, baud = 57600, wait_ready = True, heartbeat_timeout = 120 )
 
         print( "Connected to DroneKit ")
 
