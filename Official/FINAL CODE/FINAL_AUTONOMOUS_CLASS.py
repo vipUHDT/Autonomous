@@ -286,10 +286,12 @@ class CLASS:
         Returns:
             bool: True if the UAS is ARMED, False otherwise.
         """  
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-        if self.UAS_dk.armed == True:
-            return True
-        return False
+        self.connect_to_dronekit()
+
+        while self.UAS_dk.armed != True:
+            self.IS_ARMED()
+
+        return True
 
     def IS_AUTO(self):
         """
@@ -298,10 +300,12 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """    
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)    
-        if self.UAS_dk.mode == "AUTO":
-            return True
-        return False
+        self.connect_to_dronekit()
+        
+        while self.UAS_dk.mode != "AUTO":
+            self.IS_AUTO()
+
+        return True
     
     def IS_GUIDED(self):
         """
@@ -310,10 +314,12 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-        if self.UAS_dk.mode == "GUIDED":
-            return True
-        return False
+        self.connect_to_dronekit()
+
+        while self.UAS_dk.mode != "GUIDED":
+            self.IS_GUIDED()
+        
+        return True
 
 
     def RTL_stat( self ):
