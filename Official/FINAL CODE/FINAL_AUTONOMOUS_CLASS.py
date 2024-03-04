@@ -230,20 +230,35 @@ class CLASS:
         self.geotag_time.append(difference)
         return print(f"{image_name} GEOTAGGED")
 
-    async def trigger_GoPro(self, image_name):
+    async def trigger_GoPro(self, image_name, wired):
         
-        async with WiredGoPro() as gopro:
-            gopro.ble_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
-            await gopro.http_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
-            await gopro.http_setting.max_lens_mode.set(Params.MaxLensMode.DEFAULT)
-            await gopro.http_setting.camera_ux_mode.set(Params.CameraUxMode.PRO)
-            await gopro.http_command.set_turbo_mode(mode=Params.Toggle.DISABLE)
-            assert (await gopro.http_command.load_preset_group(group=proto.EnumPresetGroup.PRESET_GROUP_ID_PHOTO)).ok
-            print('Connection successful')
+        if wired == True:
+            async with WiredGoPro() as gopro:
+                gopro.http_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
+                await gopro.http_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
+                await gopro.http_setting.max_lens_mode.set(Params.MaxLensMode.DEFAULT)
+                await gopro.http_setting.camera_ux_mode.set(Params.CameraUxMode.PRO)
+                await gopro.http_command.set_turbo_mode(mode=Params.Toggle.DISABLE)
+                assert (await gopro.http_command.load_preset_group(group=proto.EnumPresetGroup.PRESET_GROUP_ID_PHOTO)).ok
+                print('Connection successful')
 
-            print( f'{image_name} is being taken' )
-            assert (await gopro.http_command.set_shutter(shutter=Params.Toggle.ENABLE)).ok
-            print(f'{image_name} was successfully taken')
+                print( f'{image_name} is being taken' )
+                assert (await gopro.http_command.set_shutter(shutter=Params.Toggle.ENABLE)).ok
+                print(f'{image_name} was successfully taken')
+        
+        if wired == False:
+            async with WirelessGoPro() as gopro:
+                gopro.ble_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
+                await gopro.ble_setting.video_performance_mode.set(Params.PerformanceMode.MAX_PERFORMANCE)
+                await gopro.ble_setting.max_lens_mode.set(Params.MaxLensMode.DEFAULT)
+                await gopro.ble_setting.camera_ux_mode.set(Params.CameraUxMode.PRO)
+                await gopro.ble_command.set_turbo_mode(mode=Params.Toggle.DISABLE)
+                assert (await gopro.ble_command.load_preset_group(group=proto.EnumPresetGroup.PRESET_GROUP_ID_PHOTO)).ok
+                print('Connection successful')
+
+                print( f'{image_name} is being taken' )
+                assert (await gopro.ble_command.set_shutter(shutter=Params.Toggle.ENABLE)).ok
+                print(f'{image_name} was successfully taken')
 
 
 

@@ -10,4 +10,4 @@ test.dk_waypoint_lap()
 
 # drone.deliver_payload_command()
 
-test.trigger_GoPro('1')
+test.trigger_GoPro('test', False)
