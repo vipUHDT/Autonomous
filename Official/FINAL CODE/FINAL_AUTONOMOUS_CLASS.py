@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -128,9 +128,11 @@ class CLASS:
             print(self.UAS_dk.mode)
             time.sleep(1)
 
+        
+
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
-        
+         
     def connect_to_mavlink( self ):
         print( "Connecting to Mavlink" )
 
@@ -299,10 +301,10 @@ class CLASS:
             bool: True if the UAS is ARMED, False otherwise.
         """  
 
-        print( "Waiting to be ARMED" )
-        while self.UAS_dk.armed != True:
-            self.IS_ARMED()
-            time.sleep( 10 )
+        
+        while not self.UAS_dk.armed:
+            print( "Waiting to be ARMED" )
+            time.sleep( 1 )
 
         print( "UAS is ARMED" )
         return True
@@ -315,10 +317,11 @@ class CLASS:
             bool: True if the UAS is in AUTO, False otherwise.
         """    
         
-        print( "Waiting to be in AUTO" )
+        
         while self.UAS_dk.mode != "AUTO":
             self.IS_AUTO()
-            time.sleep( 10 )
+            print( "Waiting to be in AUTO" )
+            time.sleep( 1 )
 
         print( "UAS is in AUTO" )
         return True
@@ -331,10 +334,10 @@ class CLASS:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
 
-        print( "Waiting to be in GUIDED" )
         while self.UAS_dk.mode != "GUIDED":
-            self.IS_GUIDED()
-            time.sleep( 10 )
+            print( "Waiting to be in GUIDED" )
+
+            time.sleep( 1 )
         
         print( "UAS is in GUIDED" )
         return True
