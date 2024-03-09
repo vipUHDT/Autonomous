@@ -20,17 +20,14 @@ class CLASS:
         :return: None
         """
         #PARAMTERS
-        self.ALTITUDE = 25.0 #meters
+        self.ALTITUDE = 10.0 #meters
         self.WAYPOINT_RADIUS = 3 #feet
         self.PAYLOAD_RADIUS = 2 #feet
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
-
-        #connecting to Mavlink
-        self.connect_to_mavlink()
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -70,7 +67,7 @@ class CLASS:
         self.yaw = 0.0
         self.lat = 0.0
         self.lon = 0.0
-        self.alt = 0.0
+        self.alt = 10.0
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
@@ -78,44 +75,59 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4008762,
-            21.4009349
+            21.4005316,
+            21.4007626,
+            21.4010798,
+            21.4008738
         ]
         self.waypoint_lap_longitude = [
-            -157.7647729,
-            -157.764608
+            -157.7649003,
+            -157.7641909,
+            -157.7643746,
+            -157.7651055
         ]
 
         self.search_area_latitude = [
-            21.4007988,
-            21.4008375
+            21.4007776,
+            21.4008613,
+            21.4008987,
+            21.4008138
         ]
 
         self.search_area_longitude = [
-            -157.7647327,
-            -157.764811
+            -157.7649137,
+            -157.7649499,
+            -157.7648172,
+            -157.7647890
         ]
 
         self.payload_delivery_latitude = [
+            21.4007414,
+            21.4009012
 
         ]
 
         self.payload_deliver_longitude = [
+            -157.7646616,
+            -157.7644779
 
         ]
 
         # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
+
         while (self.IS_ARMED() != True):
             print("waiting to be armed")
             print(self.UAS_dk.armed)
             time.sleep(1)
         print("UAS IS NOW ARMED")
-        while (self.IS_GUIDED()  != True):
+
+        while (self.IS_GUIDED() != True):
             print("waiting to be in GUIDED mode")
             print(self.UAS_dk.mode)
             time.sleep(1)
+
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
@@ -286,11 +298,13 @@ class CLASS:
         Returns:
             bool: True if the UAS is ARMED, False otherwise.
         """  
-        self.connect_to_dronekit()
 
+        print( "Waiting to be ARMED" )
         while self.UAS_dk.armed != True:
             self.IS_ARMED()
+            time.sleep( 10 )
 
+        print( "UAS is ARMED" )
         return True
 
     def IS_AUTO(self):
@@ -300,11 +314,13 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """    
-        self.connect_to_dronekit()
         
+        print( "Waiting to be in AUTO" )
         while self.UAS_dk.mode != "AUTO":
             self.IS_AUTO()
+            time.sleep( 10 )
 
+        print( "UAS is in AUTO" )
         return True
     
     def IS_GUIDED(self):
@@ -314,11 +330,13 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
-        self.connect_to_dronekit()
 
+        print( "Waiting to be in GUIDED" )
         while self.UAS_dk.mode != "GUIDED":
             self.IS_GUIDED()
+            time.sleep( 10 )
         
+        print( "UAS is in GUIDED" )
         return True
 
 
@@ -412,7 +430,6 @@ class CLASS:
 
     def servo_command(self, servo_x, position):
         #Connect to MavLink
-        self.connect_to_mavlink()
 
         print( "Dropping Payload" )
         msg = self.UAS_dk.message_factory.command_long_encode(
@@ -467,18 +484,19 @@ class CLASS:
 
         print( "Starting Payload Delivery Mission" )
 
-        for i in self.payload_delivery_latitude:
+        for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            currPayloadCoord = LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.altitude )
-            self.UAS_dk.simple_goto( currPayloadCoord )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.ALTITUDE ) )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
             time.sleep( 5 )
 
-            self.servo_command( i, 2000 )
+            self.connect_to_mavlink()
+            self.servo_command( i, 2000 )                     #for SITL test replace with just print statement
             print( f"Payload #{i + 1} Delivered" )
 
             print( "Performing Waypoint Lap" )
+            self.connect_to_dronekit()
             self.dk_waypoint_lap()
             print( "Waypoint Lap completed " )
 
@@ -637,15 +655,12 @@ class CLASS:
             str: A message indicating lap completion.
 
         """       
-        #Connecto to DroneKit
-        self.connect_to_dronekit()
-
         self.UAS_dk.mode = VehicleMode("GUIDED") 
 
         start = time.time()
 
         for wp in range(len(self.waypoint_lap_latitude)):
-            self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
+            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
             self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
