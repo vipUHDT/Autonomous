@@ -20,14 +20,14 @@ class CLASS:
         :return: None
         """
         #PARAMTERS
-        self.ALTITUDE = 10.0 #meters
+        self.ALTITUDE = 22.8 #meters
         self.WAYPOINT_RADIUS = 3 #feet
         self.PAYLOAD_RADIUS = 2 #feet
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -75,40 +75,34 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4005316,
-            21.4007626,
-            21.4010798,
-            21.4008738
+            21.4000465,
+            21.4002931,
+            21.4004679
         ]
         self.waypoint_lap_longitude = [
-            -157.7649003,
-            -157.7641909,
-            -157.7643746,
-            -157.7651055
+            -157.7646153,
+            -157.7639924,
+            -157.7638623
         ]
 
         self.search_area_latitude = [
-            21.4007776,
-            21.4008613,
-            21.4008987,
-            21.4008138
+            21.4004005,
+            21.4002881
         ]
 
         self.search_area_longitude = [
-            -157.7649137,
-            -157.7649499,
-            -157.7648172,
-            -157.7647890
+            -157.7641855,
+            -157.7642821
         ]
 
         self.payload_delivery_latitude = [
-            21.4007414,
+            21.4002788,
             21.4009012
 
         ]
 
         self.payload_deliver_longitude = [
-            -157.7646616,
+            -157.7645114,
             -157.7644779
 
         ]
@@ -145,7 +139,7 @@ class CLASS:
     def connect_to_dronekit( self ):
         print( "Connecting to DroneKit" )
 
-        self.UAS_dk = connect( self.connection_string, baud = 57600, wait_ready = True, heartbeat_timeout = 120 )
+        self.UAS_dk = connect( self.connection_string, baud = 57600, wait_ready = True, heartbeat_timeout = 180, source_system=1)
 
         print( "Connected to DroneKit ")
 
@@ -237,6 +231,11 @@ class CLASS:
         p3.start()
         p4.start()
         
+        p1.join()
+        p2.join()
+        p3.join()
+        p4.join()
+
         end = time.time()
         difference = end - start
         self.geotag_time.append(difference)
@@ -489,13 +488,13 @@ class CLASS:
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.ALTITUDE ) )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], 26 ) )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
-            time.sleep( 5 )
+            time.sleep( 15 )
 
             self.connect_to_mavlink()
-            self.servo_command( i, 2000 )                     #for SITL test replace with just print statement
+            self.servo_command( i, 700 )                     #for SITL test replace with just print statement
             print( f"Payload #{i + 1} Delivered" )
 
             print( "Performing Waypoint Lap" )
@@ -665,7 +664,7 @@ class CLASS:
         for wp in range(len(self.waypoint_lap_latitude)):
             # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE), groundspeed = 3.5)
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
         
         end = time.time()
@@ -692,7 +691,7 @@ class CLASS:
         for x in range(len(self.search_area_latitude)):
             print(x)
             print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE), groundspeed = 3.5)
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
 
