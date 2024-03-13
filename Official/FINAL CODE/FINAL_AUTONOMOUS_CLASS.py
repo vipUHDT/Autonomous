@@ -107,15 +107,15 @@ class CLASS:
         # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
-        # while (self.IS_ARMED() != True):
-        #     print("waiting to be armed")
-        #     print(self.UAS_dk.armed)
-        #     time.sleep(1)
+        while (self.IS_ARMED() != True):
+            print("waiting to be armed")
+            print(self.UAS_dk.armed)
+            time.sleep(1)
         print("UAS IS NOW ARMED")
-        # while (self.IS_GUIDED()  != True):
-        #     print("waiting to be in GUIDED mode")
-        #     print(self.UAS_dk.mode)
-        #     time.sleep(1)
+        while (self.IS_GUIDED()  != True):
+            print("waiting to be in GUIDED mode")
+            print(self.UAS_dk.mode)
+            time.sleep(1)
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
         
@@ -286,7 +286,6 @@ class CLASS:
         Returns:
             bool: True if the UAS is ARMED, False otherwise.
         """  
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         if self.UAS_dk.armed == True:
             return True
         return False
@@ -298,7 +297,6 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """    
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)    
         if self.UAS_dk.mode == "AUTO":
             return True
         return False
@@ -310,7 +308,6 @@ class CLASS:
         Returns:
             bool: True if the UAS is in AUTO, False otherwise.
         """        
-        self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
         if self.UAS_dk.mode == "GUIDED":
             return True
         return False
