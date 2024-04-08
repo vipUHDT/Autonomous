@@ -75,36 +75,36 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4000465,
-            21.4002931,
-            21.4004679
+            21.4001383,
+            21.4004567,
+            21.4007426,
+            21.4005354
         ]
         self.waypoint_lap_longitude = [
-            -157.7646153,
-            -157.7639924,
-            -157.7638623
+            -157.7644806,
+            -157.7636430,
+            -157.7639294,
+            -157.7644819
         ]
 
         self.search_area_latitude = [
-            21.4004005,
-            21.4002881
+            21.4004255,
+            21.4005653,
+            21.4005104
         ]
 
         self.search_area_longitude = [
-            -157.7641855,
-            -157.7642821
+            -157.7642579,
+            -157.7641775,
+            -157.7640353
         ]
 
         self.payload_delivery_latitude = [
-            21.4002788,
-            21.4009012
-
+            21.4004442
         ]
 
         self.payload_deliver_longitude = [
-            -157.7645114,
-            -157.7644779
-
+            -157.7641439
         ]
 
         # self.user_input()
