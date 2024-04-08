@@ -7,7 +7,6 @@ test = FINAL_AUTONOMOUS_CLASS.CLASS()          #Runs the init function of the im
 test.connect_to_dronekit()
 test.UAS_dk.simple_goto(LocationGlobalRelative( test.payload_delivery_latitude[0], test.payload_deliver_longitude[0], 26 ) )
 
-test.connect_to_mavlink()
 test.servo_command( 1, 700 )
 time.sleep( 3 )
 test.servo_command( 2, 700 )
