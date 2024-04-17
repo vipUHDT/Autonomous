@@ -26,8 +26,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -55,11 +55,11 @@ class CLASS:
         self.payload_delivery_time = []
 
 
-        #connect the camera
-        # print("Connecting to the camera")
-        # self.command = ["gphoto2", "--auto-detect"]
-        # #self.subprocess_execute(self.command)
-        # print('Camera Connected')
+        # connect the camera
+        print("Connecting to the camera")
+        self.command = ["gphoto2", "--auto-detect"]
+        self.subprocess_execute(self.command)
+        print('Camera Connected')
 
         #declaring initial variable
         self.pitch = 0.0
@@ -227,8 +227,11 @@ class CLASS:
         p4 = multiprocessing.Process(target = self.subprocess_execute, args = (tag_alt_command,))
         
         p1.start()
+        time.sleep( 1 )
         p2.start()
+        time.sleep( 1 )
         p3.start()
+        time.sleep( 1 )
         p4.start()
         
         p1.join()
