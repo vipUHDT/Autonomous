@@ -29,10 +29,10 @@ class CLASS:
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
         # self.connection_string = "/dev/ttyACM0" #usb to micro usb
-        self.servoKit = ServoKit( channels = 16 )
+        self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
-        self.connect_to_dronekit()
+        # self.connect_to_dronekit()
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -113,16 +113,16 @@ class CLASS:
         
         print("AUTONOMOUS SCRIPT IS READY")
 
-        while (self.IS_ARMED() != True):
-            print("waiting to be armed")
-            print(self.UAS_dk.armed)
-            time.sleep(1)
-        print("UAS IS NOW ARMED")
+        # while (self.IS_ARMED() != True):
+        #     print("waiting to be armed")
+        #     print(self.UAS_dk.armed)
+        #     time.sleep(1)
+        # print("UAS IS NOW ARMED")
 
-        while (self.IS_GUIDED() != True):
-            print("waiting to be in GUIDED mode")
-            print(self.UAS_dk.mode)
-            time.sleep(1)
+        # while (self.IS_GUIDED() != True):
+        #     print("waiting to be in GUIDED mode")
+        #     print(self.UAS_dk.mode)
+        #     time.sleep(1)
 
         
 
@@ -436,8 +436,10 @@ class CLASS:
         self.UAS_mav.mav.send(message)
 
     def gpio_servo_command( self, servo_x, angle ):
-        self.servoKit[ servo_x ].angle = angle
+        print( "Dropping Payload" )
+        self.SK.servo[ servo_x ].angle = angle
         time.sleep( 1 )
+        print( "Dropped Payload" )
 
     def servo_command(self, servo_x, position):
         #Connect to MavLink

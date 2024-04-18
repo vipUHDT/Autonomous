@@ -4,7 +4,7 @@ from dronekit import LocationGlobalRelative
 
 test = FINAL_AUTONOMOUS_CLASS.CLASS()          #Runs the init function of the imported file
 
-test.gpio_servo_command( 0, 120)
+test.gpio_servo_command( 0, 0)
 
 print( "Mission Complete" )
 
