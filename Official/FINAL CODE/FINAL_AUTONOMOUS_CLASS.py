@@ -174,10 +174,10 @@ class CLASS:
         gps_split = gps.split(",")
         lat_split = gps_split[0].split("=")
         # value of the lat
-        self.lat = lat_split[1]
+        self.lat = self.UAS_dk.location.global_relative_frame.lat
         lon_split = gps_split[1].split("=")
         # value of the long
-        self.lon = lon_split[1]
+        self.lon = self.UAS_dk.location.global_relative_frame.lon
         alt_split = gps_split[2].split("=")
         # altitude value
         self.alt = alt_split[1]
@@ -210,6 +210,7 @@ class CLASS:
         # Geotagging photo with the attitude and GPS coordinate
         pyr = ('pitch:' + str(self.drone_sensory[0]) + ' yaw:' + str(self.drone_sensory[2]) + ' roll:' + str(self.drone_sensory[1]))
         print(pyr)
+        print( self.drone_sensory[3])
         tag_pyr_command = ('exiftool','-overwrite_original', '-comment=' + str(pyr), str(image_name))
         tag_lat_command = ('exiftool', '-overwrite_original', '-exif:gpslatitude=' + '\'' + str(self.drone_sensory[3]) + '\'', str(image_name))
         tag_long_command = ('exiftool','-overwrite_original', '-exif:gpslongitude=' + '\'' + str(self.drone_sensory[4]) + '\'', str(image_name))
