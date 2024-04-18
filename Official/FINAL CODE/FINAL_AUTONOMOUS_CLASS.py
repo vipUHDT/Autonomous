@@ -9,6 +9,7 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGloba
 from array import array
 import pymavlink.dialects.v20.all as dialect
 from haversine import haversine, Unit
+from adafruit_servokit import ServoKit
 
 class CLASS:
     def __init__(self):
@@ -28,6 +29,7 @@ class CLASS:
         print("Connecting to UAS")
         self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
         # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.servoKit = ServoKit( channels = 16 )
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -432,6 +434,10 @@ class CLASS:
 
         # Send the message
         self.UAS_mav.mav.send(message)
+
+    def gpio_servo_command( self, servo_x, angle ):
+        self.servoKit[ servo_x ].angle = angle
+        time.sleep( 1 )
 
     def servo_command(self, servo_x, position):
         #Connect to MavLink
