@@ -27,8 +27,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
         self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
@@ -70,6 +70,7 @@ class CLASS:
         self.lat = 0.0
         self.lon = 0.0
         self.alt = 10.0
+        self.alt_IP = [24.384, 25.908, 27.432, 28.956]
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
@@ -680,25 +681,26 @@ class CLASS:
         start = time.time()
         print('Now Conducting the search area')
 
-        for x in range(len(self.search_area_latitude)):
-            print(x)
-            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE), groundspeed = 3.5)
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
-            print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
+        for y in range( len( self.alt_IP ) ):
+            for x in range(len(self.search_area_latitude)):
+                print(x)
+                print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP[y]))
+                self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP[y]), groundspeed = 3.5)
+                self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
+                print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
 
-            #get attitide data
-            p1 = multiprocessing.Process(target=self.attitude())
-            #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
-            #start the execution and wait 
-            p1.start()
-            p2.start()
-            p1.join()
-            p2.join()
+                #get attitide data
+                p1 = multiprocessing.Process(target=self.attitude())
+                #take image
+                p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}_{self.alt_IP[y]}.jpg",))
+                #start the execution and wait 
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
 
-            #geotag
-            self.geotag(f'image{x+1}.jpg')
+                #geotag
+                self.geotag(f'image{x+1}_{self.alt_IP[y]}.jpg')
 
         end = time.time()
         difference = end - start
