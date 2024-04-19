@@ -27,12 +27,12 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
         self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
-        # self.connect_to_dronekit()
+        self.connect_to_dronekit()
         
         print('CREATING IMAGE DIRECTORY')
         image_dir = f'image_{time.ctime(time.time())}'
@@ -113,16 +113,16 @@ class CLASS:
         
         print("AUTONOMOUS SCRIPT IS READY")
 
-        # while (self.IS_ARMED() != True):
-        #     print("waiting to be armed")
-        #     print(self.UAS_dk.armed)
-        #     time.sleep(1)
-        # print("UAS IS NOW ARMED")
+        while (self.IS_ARMED() != True):
+            print("waiting to be armed")
+            print(self.UAS_dk.armed)
+            time.sleep(1)
+        print("UAS IS NOW ARMED")
 
-        # while (self.IS_GUIDED() != True):
-        #     print("waiting to be in GUIDED mode")
-        #     print(self.UAS_dk.mode)
-        #     time.sleep(1)
+        while (self.IS_GUIDED() != True):
+            print("waiting to be in GUIDED mode")
+            print(self.UAS_dk.mode)
+            time.sleep(1)
 
         
 
@@ -436,33 +436,16 @@ class CLASS:
         self.UAS_mav.mav.send(message)
 
     def gpio_servo_command( self, servo_x, angle ):
+        """
+        Triggers servo using i2c protocol using adafruit_servokit library
+        servo_x: servo number
+        angle: angle of the servo (0 to close, 120 to open)
+        """
         print( "Dropping Payload" )
         self.SK.servo[ servo_x ].angle = angle
         time.sleep( 1 )
         print( "Dropped Payload" )
 
-    def servo_command(self, servo_x, position):
-        #Connect to MavLink
-
-        print( "Dropping Payload" )
-        msg = self.UAS_dk.message_factory.command_long_encode(
-            self.UAS_mav.target_system,
-            self.UAS_mav.target_component,
-            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
-            0,
-            servo_x + 8,
-            position,
-            0,
-            0,
-            0,
-            0,
-            0
-        )
-
-        self.UAS_dk.send_mavlink( msg )
-        print( "Payload dropped" )
-
-        
     def loiter_command(self, time, seq):
         """
         Define a waypoint command.
@@ -504,12 +487,10 @@ class CLASS:
 
             time.sleep( 15 )
 
-            self.connect_to_mavlink()
-            self.servo_command( i, 700 )                     #for SITL test replace with just print statement
+            self.gpio_servo_command( i, 120 )
             print( f"Payload #{i + 1} Delivered" )
 
             print( "Performing Waypoint Lap" )
-            self.connect_to_dronekit()
             self.dk_waypoint_lap()
             print( "Waypoint Lap completed " )
 
