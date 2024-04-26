@@ -27,8 +27,8 @@ class CLASS:
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
         self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
@@ -103,11 +103,15 @@ class CLASS:
         ]
 
         self.payload_delivery_latitude = [
-            21.4004442
+            21.4004442,
+            21.4003693,
+            21.4004068
         ]
 
         self.payload_deliver_longitude = [
-            -157.7641439
+            -157.7641439,
+            -157.7641989,
+            -157.7643424
         ]
 
         # self.user_input()
@@ -483,7 +487,7 @@ class CLASS:
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], 26 ) )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], 26 ), groundspeed = 3.5 )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
             time.sleep( 15 )

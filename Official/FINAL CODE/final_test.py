@@ -10,14 +10,15 @@ test = FINAL_AUTONOMOUS_CLASS.CLASS()          #Runs the init function of the im
 # test.waypoint_reached( test.payload_delivery_latitude[0], test.payload_deliver_longitude[0], test.WAYPOINT_RADIUS )
 
 # for i in range(4):
-test.gpio_servo_command( 2, 120 )
+#     test.gpio_servo_command( i, 0 )
 #     time.sleep( 5 )
-# print( "Mission Complete" )
+
 
 #full mission test
-# test.dk_waypoint_lap()
-# test.search_area_command()
-# test.deliver_payload_command()
+test.dk_waypoint_lap()
+test.search_area_command()
+test.deliver_payload_command()
+
 
 print( "Mission Complete" )
 
