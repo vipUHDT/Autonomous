@@ -22,6 +22,8 @@ class CLASS:
         """
         #PARAMTERS
         self.ALTITUDE = 22.8 #meters
+        self.alt_AD = 26
+        self.alt_IP = 26
         self.WAYPOINT_RADIUS = 3 #feet
         self.PAYLOAD_RADIUS = 2 #feet
         self.SEARCH_AREA_RADIUS = 2 #feet
@@ -70,7 +72,6 @@ class CLASS:
         self.lat = 0.0
         self.lon = 0.0
         self.alt = 10.0
-        self.alt_IP = [24.384, 25.908, 27.432, 28.956]
         self.image_number = 1
         self.drone_sensory = [self.pitch, self.roll, self.yaw, self.lat, self.lon, self.alt]
         self.currWP_index = 0
@@ -487,13 +488,14 @@ class CLASS:
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], 26 ), groundspeed = 3.5 )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = 3.5 )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
-            time.sleep( 15 )
 
-            self.gpio_servo_command( i, 120 )
+            self.gpio_servo_command( i, 0 )
             print( f"Payload #{i + 1} Delivered" )
+
+            time.sleep( 15 )
 
             print( "Performing Waypoint Lap" )
             self.dk_waypoint_lap()
@@ -685,26 +687,23 @@ class CLASS:
         start = time.time()
         print('Now Conducting the search area')
 
-        for y in range( len( self.alt_IP ) ):
-            for x in range(len(self.search_area_latitude)):
-                print(x)
-                print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP[y]))
-                self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP[y]), groundspeed = 3.5)
-                self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
-                print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
-
-                #get attitide data
-                p1 = multiprocessing.Process(target=self.attitude())
-                #take image
-                p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}_{self.alt_IP[y]}.jpg",))
-                #start the execution and wait 
-                p1.start()
-                p2.start()
-                p1.join()
-                p2.join()
-
-                #geotag
-                self.geotag(f'image{x+1}_{self.alt_IP[y]}.jpg')
+        for x in range(len(self.search_area_latitude)):
+            print(x)
+            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = 3.5)
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
+            print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
+            #get attitide data
+            p1 = multiprocessing.Process(target=self.attitude())
+            #take image
+            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}_{self.alt_IP}.jpg",))
+            #start the execution and wait 
+            p1.start()
+            p2.start()
+            p1.join()
+            p2.join()
+            #geotag
+            self.geotag(f'image{x+1}_{self.alt_IP}.jpg')
 
         end = time.time()
         difference = end - start
