@@ -9,6 +9,7 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGloba
 from array import array
 import pymavlink.dialects.v20.all as dialect
 from haversine import haversine, Unit
+from adafruit_servokit import ServoKit
 
 class CLASS:
     def __init__(self):
@@ -21,13 +22,16 @@ class CLASS:
         """
         #PARAMTERS
         self.ALTITUDE = 22.8 #meters
+        self.alt_AD = 26
+        self.alt_IP = 26
         self.WAYPOINT_RADIUS = 3 #feet
         self.PAYLOAD_RADIUS = 2 #feet
         self.SEARCH_AREA_RADIUS = 2 #feet
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
         self.connect_to_dronekit()
@@ -100,11 +104,15 @@ class CLASS:
         ]
 
         self.payload_delivery_latitude = [
-            21.4004442
+            21.4004442,
+            21.4003693,
+            21.4004068
         ]
 
         self.payload_deliver_longitude = [
-            -157.7641439
+            -157.7641439,
+            -157.7641989,
+            -157.7643424
         ]
 
         # self.user_input()
@@ -434,28 +442,17 @@ class CLASS:
         # Send the message
         self.UAS_mav.mav.send(message)
 
-    def servo_command(self, servo_x, position):
-        #Connect to MavLink
-
+    def gpio_servo_command( self, servo_x, angle ):
+        """
+        Triggers servo using i2c protocol using adafruit_servokit library
+        servo_x: servo number
+        angle: angle of the servo (0 to close, 120 to open)
+        """
         print( "Dropping Payload" )
-        msg = self.UAS_dk.message_factory.command_long_encode(
-            self.UAS_mav.target_system,
-            self.UAS_mav.target_component,
-            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
-            0,
-            servo_x + 8,
-            position,
-            0,
-            0,
-            0,
-            0,
-            0
-        )
+        self.SK.servo[ servo_x ].angle = angle
+        time.sleep( 1 )
+        print( "Dropped Payload" )
 
-        self.UAS_dk.send_mavlink( msg )
-        print( "Payload dropped" )
-
-        
     def loiter_command(self, time, seq):
         """
         Define a waypoint command.
@@ -492,17 +489,16 @@ class CLASS:
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], 26 ) )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = 3.5 )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
+
+
+            self.gpio_servo_command( i, 0 )
+            print( f"Payload #{i + 1} Delivered" )
 
             time.sleep( 15 )
 
-            self.connect_to_mavlink()
-            self.servo_command( i, 700 )                     #for SITL test replace with just print statement
-            print( f"Payload #{i + 1} Delivered" )
-
             print( "Performing Waypoint Lap" )
-            self.connect_to_dronekit()
             self.dk_waypoint_lap()
             print( "Waypoint Lap completed " )
 
@@ -694,23 +690,21 @@ class CLASS:
 
         for x in range(len(self.search_area_latitude)):
             print(x)
-            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.ALTITUDE), groundspeed = 3.5)
+            print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP))
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = 3.5)
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
-
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
             #take image
-            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}.jpg",))
+            p2 = multiprocessing.Process(target=self.trigger_camera, args= (f"image{x+1}_{self.alt_IP}.jpg",))
             #start the execution and wait 
             p1.start()
             p2.start()
             p1.join()
             p2.join()
-
             #geotag
-            self.geotag(f'image{x+1}.jpg')
+            self.geotag(f'image{x+1}_{self.alt_IP}.jpg')
 
         end = time.time()
         difference = end - start
