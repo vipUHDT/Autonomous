@@ -21,12 +21,15 @@ class CLASS:
         :return: None
         """
         #PARAMTERS
-        self.ALTITUDE = 22.8 #meters
+        self.ALTITUDE = 22.8 # meters
         self.alt_AD = 26
         self.alt_IP = 26
-        self.WAYPOINT_RADIUS = 3 #feet
-        self.PAYLOAD_RADIUS = 2 #feet
-        self.SEARCH_AREA_RADIUS = 2 #feet
+        self.WAYPOINT_RADIUS = 3 # feet
+        self.PAYLOAD_RADIUS = 2 # feet
+        self.SEARCH_AREA_RADIUS = 2 # feet
+        self.WAYPOINT_SPEED = 5 # m/s
+        self.SEARCH_SPEED = 3.5 # m/s
+        self.DELIVER_SPEED = 4 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -79,108 +82,54 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            38.31614610,
-            38.31697950,
-            38.31659230,
-            38.31686170,
-            38.31827580,
-            38.31838530,
-            38.31568320,
-            38.31509390,
-            38.31359550,
-            38.31614610
+            21.4001083,
+            21.4005141,
+            21.4011884,
+            21.4006253
         ]
         self.waypoint_lap_longitude = [
-            -76.55602810,
-            -76.55574920,
-            -76.55286310,
-            -76.55199410,
-            -76.55170440,
-            -76.54568550,
-            -76.54399040,
-            -76.54080390,
-            -76.54139400,
-            -76.55602810
+            -157.7645811,
+            -157.7634291,
+            -157.7637698,
+            -157.7649419
         ]
 
         self.search_area_latitude = [
-            38.31455680,
-            38.31453760,
-            38.31452160,
-            38.31450550,
-            38.31449270,
-            38.31447680,
-            38.31445760,
-            38.31444160,
-            38.31442880,
-            38.31441600,
-            38.31439680,
-            38.31438080,
-            38.31436800,
-            38.31435840,
-            38.31425600,
-            38.31426560,
-            38.31428160,
-            38.31429760,
-            38.31431680,
-            38.31432640,
-            38.31434240,
-            38.31436160,
-            38.31437440,
-            38.31439360,
-            38.31440640,
-            38.31441920,
-            38.31443840,
-            38.31445440
+            21.4004642,
+            21.4004917,
+            21.4005166,
+            21.4005379,
+            21.4004979,
+            21.4004729,
+            21.4004505,
+            21.4004242
         ]
 
         self.search_area_longitude = [
-            -76.54514560,
-            -76.54504960,
-            -76.54496000,
-            -76.54487030,
-            -76.54477440,
-            -76.54469120,
-            -76.54460150,
-            -76.54451200,
-            -76.54441600,
-            -76.54432640,
-            -76.54424320,
-            -76.54415360,
-            -76.54405760,
-            -76.54396800,
-            -76.54400000,
-            -76.54408960,
-            -76.54417920,
-            -76.54427520,
-            -76.54435830,
-            -76.54444800,
-            -76.54453760,
-            -76.54463360,
-            -76.54472320,
-            -76.54481280,
-            -76.54489600,
-            -76.54499190,
-            -76.54508160,
-            -76.54517120
+            -157.7644309,
+            -157.7643679,
+            -157.7643062,
+            -157.7642472,
+            -157.7642258,
+            -157.7642888,
+            -157.7643465,
+            -157.7644135
             
         ]
 
         self.payload_delivery_latitude = [
-            38.31447620,
-            38.31447200,
-            38.31440570,
-            38.31436890
+            21.4004667,
+            21.4004729,
+            21.4005141,
+            21.4004998
         ]
 
         self.payload_deliver_longitude = [
-            -76.54501900,
-            -76.54483930,
-            -76.54458580,
-            -76.54426800
+            -157.7643967,
+            -157.7643297,
+            -157.7642827,
+            -157.7642512
         ]
-
-        # self.user_input()
         
         print("AUTONOMOUS SCRIPT IS READY")
 
@@ -554,7 +503,7 @@ class CLASS:
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = 3.5 )
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
 
 
@@ -729,7 +678,7 @@ class CLASS:
         for wp in range(len(self.waypoint_lap_latitude)):
             # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE), groundspeed = 3.5)
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE), groundspeed = self.WAYPOINT_SPEED )
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
         
         end = time.time()
@@ -756,7 +705,7 @@ class CLASS:
         for x in range(len(self.search_area_latitude)):
             print(x)
             print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = 3.5)
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = self.SEARCH_SPEED )
             self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
             #get attitide data
@@ -976,46 +925,6 @@ class CLASS:
                         file.write(f"{data_name}: {data_values}\n")
                         file.write(f"{data_name} average: {data_average} seconds\n")
                         file.write(f"{data_name} sum: {data_sum} seconds\n\n")
-
-    def KAMIKAZE():
-        """
-        Kills the UAS by completely cutting power to drone
-
-        Returns:
-            None
-        """
-        #send signal to relay to kill drone
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⠤⠖⠛⣷⣶⣶⠿⢿⣿⣿⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡴⣾⣿⠋⠀⠀⠀⢾⣿⠏⠀⠀⠀⠀⠈⠛⠻⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⠋⠀⠙⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢻⣷⣶⣦⣤⡀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⢀⣠⣤⣤⣠⣶⣿⡅⠀⠀⠀⣤⣤⣴⣶⠗⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⠆⠀⠹⣷⣤⡀⠀⠀⠀⠀⠀")
-        print("⠀⠀⣰⡿⠋⠉⢹⣿⠁⠉⠀⠀⠀⠀⠀⣿⠏⠀⠀⠀⠀⢀⣠⣤⠀⠀⠀⠀⠲⣤⣄⣀⣀⠀⠀⠀⠙⢻⣷⣦⡀⠀⠀")
-        print("⠀⣰⣿⠇⠀⠀⠸⠿⠂⠀⠀⠀⠀⠀⠀⠟⠀⠀⠀⠀⠠⣿⡏⠁⠀⠀⠀⠀⠀⠈⢿⠁⠀⠀⠀⠀⠀⠸⣿⠉⢿⣆⠀")
-        print("⢰⣿⡁⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣦⡀⠛⢿⣦⠀⠀⡀⠀⠀⠀⠘⠀⠀⠀⠀⠀⠀⠀⠛⢀⠀⣿⡄")
-        print("⢸⡿⠁⠀⠀⢿⣄⠀⡀⠀⠀⠀⠀⢀⣤⣀⣀⣀⣤⣿⣷⣶⡿⠻⣿⣿⠿⣷⣦⣄⣸⣷⠀⠀⠀⢠⣄⠀⠀⠈⠛⠿⣿")
-        print("⠸⣿⣾⠃⠀⠀⠛⠿⠃⠀⠀⠰⣤⣴⣿⠿⠿⠿⠛⠉⠉⠀⠀⡄⠀⢰⣿⠟⢿⣿⣿⣄⡀⢰⣿⡟⠀⠀⠀⠀⠀⢹⡇")
-        print("⠀⢸⣿⢸⡆⠀⠶⠿⠀⣀⡀⠠⣬⣭⣭⣀⠀⣆⠀⠀⢠⠀⠀⣰⠃⣰⣿⣿⠏⠀⠀⣉⣿⣿⠀⠙⠷⠀⠀⢠⣶⡀⣸⣧")
-        print("⠀⠸⣿⣿⣷⡄⠀⠀⠘⠋⠁⠀⠀⠀⠉⡛⢷⣽⣦⠀⢸⡄⠀⣿⢀⣿⣿⣿⡶⠒⠛⢋⡅⠀⠀⠀⢀⣴⢀⡼⠟⠛⠟⠁")
-        print("⠀⠀⠈⠙⠻⣷⣶⣦⣴⡾⠛⠶⠦⣶⠾⢿⣶⣬⣿⡆⠸⣧⢠⡇⢸⣿⣣⣥⣄⣀⣈⣤⣶⣦⣴⣿⠟⠋⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⣽⣿⠀⢿⠈⣧⣼⢹⣿⣀⣀⠉⠛⠛⠉⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⡶⢿⡛⢹⣿⡄⠸⠇⣿⡇⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⡿⢛⣉⣣⣾⣿⠛⣿⣷⠀⡀⢸⣇⢸⡟⠛⣿⡇⢠⡟⢿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣅⠀⠀⡉⠛⢿⣅⣀⣿⣿⠀⣿⣄⣉⣹⣧⡴⢾⣯⡀⠈⠋⠉⢻⣿⡀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣏⣀⣾⣏⠀⠀⠈⠙⠿⠿⠋⢻⡟⠋⠛⢿⡀⠀⠸⠀⠀⣀⠀⠀⣽⣿⡆⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⠿⢿⣷⣀⣀⣼⣦⠀⠀⠀⢁⣀⣠⣶⡀⠀⣀⣀⣀⣼⣤⣾⣿⡿⠇⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠛⠿⠿⣿⣷⣶⣿⠿⠟⣿⠛⠿⣶⣿⣿⠿⠋⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⣰⠃⣿⡇⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⢻⣇⠀⣿⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠘⣿⠀⣿⠀⢿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢿⣿⠀⣿⠀⣿⡆⠸⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣯⣾⡟⠀⠁⠀⢿⣇⠀⢻⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠋⣻⣷⠿⠋⠀⡀⠀⠀⠸⢿⡄⠀⢻⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠖⠛⠁⠀⠀⣰⠇⠀⠀⠀⠀⠀⠀⠀⠈⠙⠓⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-
-
-
-        return print("UAS TERMINATED")
 
 
 
