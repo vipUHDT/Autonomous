@@ -33,8 +33,8 @@ class CLASS:
         self.DELIVER_SPEED = 4 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
         self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
@@ -572,6 +572,8 @@ class CLASS:
                     self.payload_delivery_compartment[payload_id].append(compartment)
 
     def deliver_payload_command(self):
+
+        self.download_payload_coord( 'payload_coord.txt' )
 
         print( "Starting Payload Delivery Mission" )
 
