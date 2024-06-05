@@ -557,9 +557,8 @@ class CLASS:
 
     def deliver_payload_command(self):
 
-        self.download_payload_coord( '/home/uhdt/Documents/GitHub/Autonomous/Official/FINAL CODE/payload_coord.txt' )
-        time.sleep( 5 )
-
+        self.download_payload_coord( '/home/uhdt/Documents/GitHub/Autonomous/Official/FINAL CODE/payload_coord.txt')
+        
         print( "Starting Payload Delivery Mission" )
 
         for i in range( len( self.payload_delivery_latitude ) ):
