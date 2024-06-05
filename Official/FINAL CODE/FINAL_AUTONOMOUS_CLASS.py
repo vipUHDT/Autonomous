@@ -4,6 +4,7 @@ import math
 import multiprocessing
 import subprocess
 import exiftool
+import re
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
@@ -157,17 +158,15 @@ class CLASS:
         ]
 
         self.payload_delivery_latitude = [
-            21.4004667,
-            21.4004729,
-            21.4005141,
-            21.4004998
+            
         ]
 
-        self.payload_deliver_longitude = [
-            -157.7643967,
-            -157.7643297,
-            -157.7642827,
-            -157.7642512
+        self.payload_delivery_longitude = [
+            
+        ]
+
+        self.payload_delivery_compartment = [
+
         ]
         
         print("AUTONOMOUS SCRIPT IS READY")
@@ -535,18 +534,54 @@ class CLASS:
 
         # Send the message
         self.UAS_mav.mav.send(message)
-      
+    
+    def download_payload_coord( self, file_name ):
+        
+        with open( file_name, 'r' ) as file:
+            for line in file:
+                latitude_match = re.search( r"Latitud of payload (\w+): ([\d\.-]+)", line )
+                longitude_match = re.search( r"Longitude of payload (\w+): ([\d\.-]+)", line)
+                compartment_match = re.search( r"Compartment of payload (\w+): ([\d\.-]+)", line )
+
+                if latitude_match:
+                    payload_id = latitude_match.group(1)
+                    latitude = float( latitude_match.group(2) )
+
+                    if payload_id not in self.payload_delivery_latitude[payload_id]:
+                        self.payload_delivery_latitude[payload_id] = []
+                    
+                    self.payload_delivery_latitude[payload_id].append(latitude)
+
+                
+                if longitude_match:
+                    payload_id = longitude_match.group(1)
+                    longitude = float( longitude_match.group(2) )
+
+                    if payload_id not in self.payload_delivery_longitude[payload_id]:
+                        self.payload_delivery_longitude[payload_id] = []
+                    
+                    self.payload_delivery_longitude[payload_id].append(longitude)
+
+                if compartment_match:
+                    payload_id = compartment_match.group(1)
+                    compartment = int( compartment_match.group(2) )
+
+                    if payload_id not in self.payload_delivery_compartment:
+                        self.payload_delivery_compartment[payload_id] = []
+                    
+                    self.payload_delivery_compartment[payload_id].append(compartment)
+
     def deliver_payload_command(self):
 
         print( "Starting Payload Delivery Mission" )
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
-            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
+            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.WAYPOINT_RADIUS)
 
 
-            self.gpio_servo_command( i, 0 )
+            self.gpio_servo_command( self.payload_delivery_compartment[i], 0 )
             print( f"Payload #{i + 1} Delivered" )
 
             time.sleep( 15 )

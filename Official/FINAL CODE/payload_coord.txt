@@ -1,0 +1,15 @@
+Latitude of payload A: 158.123512
+Longitude of payload A: -16.1234125
+Compartment of payload A: 5
+
+Latitude of payload B: 158.123512
+Longitude of payload B: -16.1234125
+Compartment of payload B: 2
+
+Latitude of payload C: 158.123512
+Longitude of payload C: -16.1234125
+Compartment of payload C: 8
+
+Latitude of payload D: 158.123512
+Longitude of payload D: -16.1234125
+Compartment of payload D: 1
