@@ -25,9 +25,9 @@ class CLASS:
         self.ALTITUDE = 22.8 # meters
         self.alt_AD = 26
         self.alt_IP = 24.384
-        self.WAYPOINT_RADIUS = 3 # feet
-        self.PAYLOAD_RADIUS = 3 # feet
-        self.SEARCH_AREA_RADIUS = 3 # feet
+        self.WAYPOINT_RADIUS = 5 # feet
+        self.PAYLOAD_RADIUS = 5 # feet
+        self.SEARCH_AREA_RADIUS = 5 # feet
         self.WAYPOINT_SPEED = 10 # m/s
         self.SEARCH_SPEED = 3 # m/s
         self.DELIVER_SPEED = 4 # m/s
@@ -539,38 +539,43 @@ class CLASS:
         
         with open( file_name, 'r' ) as file:
             for line in file:
-                latitude_match = re.search( r"Latitud of payload (\w+): ([\d\.-]+)", line )
-                longitude_match = re.search( r"Longitude of payload (\w+): ([\d\.-]+)", line)
-                compartment_match = re.search( r"Compartment of payload (\w+): ([\d\.-]+)", line )
+                latitude_match = re.search( r"Latitude of payload (\w+): (-?\d+\.\d+)", line )
+                longitude_match = re.search( r"Longitude of payload (\w+): (-?\d+\.\d+)", line)
+                compartment_match = re.search( r"Compartment of payload (\w+): (\d+)", line )
 
                 if latitude_match:
+                    print( "Latitude match found:", latitude_match.group() )
                     latitude = float( latitude_match.group(2) )
                     self.payload_delivery_latitude.append(latitude)
                 
                 if longitude_match:
+                    print( "Longitude match found:", longitude_match.group() )
                     longitude = float( longitude_match.group(2) )
                     self.payload_delivery_longitude.append(longitude)
 
                 if compartment_match:
+                    print( "Compartment match found:", compartment_match.group() )
                     compartment = int( compartment_match.group(2) )
                     self.payload_delivery_compartment.append(compartment)
 
     def deliver_payload_command(self):
 
         self.download_payload_coord( '/home/uhdt/Documents/GitHub/Autonomous/Official/FINAL CODE/payload_coord.txt')
-        
+        time.sleep( 3 )
+
         print( "Starting Payload Delivery Mission" )
 
         for i in range( len( self.payload_delivery_latitude ) ):
             print( f"Heading to payload #{i + 1}" )
             self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
-            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.WAYPOINT_RADIUS)
+            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.PAYLOAD_RADIUS)
 
+            time.sleep( 2 )
 
             self.gpio_servo_command( self.payload_delivery_compartment[i], 0 )
             print( f"Payload #{i + 1} Delivered" )
 
-            time.sleep( 15 )
+            time.sleep( 10 )
 
             print( "Performing Waypoint Lap" )
             self.dk_waypoint_lap()
@@ -766,7 +771,7 @@ class CLASS:
             print(x)
             print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP))
             self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = self.SEARCH_SPEED )
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
