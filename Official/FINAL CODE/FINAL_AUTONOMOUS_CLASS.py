@@ -28,7 +28,7 @@ class CLASS:
         self.WAYPOINT_RADIUS = 3 # feet
         self.PAYLOAD_RADIUS = 3 # feet
         self.SEARCH_AREA_RADIUS = 3 # feet
-        self.WAYPOINT_SPEED = 5 # m/s
+        self.WAYPOINT_SPEED = 10 # m/s
         self.SEARCH_SPEED = 3 # m/s
         self.DELIVER_SPEED = 4 # m/s
         #connecting to UAS with dronekit
@@ -544,36 +544,21 @@ class CLASS:
                 compartment_match = re.search( r"Compartment of payload (\w+): ([\d\.-]+)", line )
 
                 if latitude_match:
-                    payload_id = latitude_match.group(1)
                     latitude = float( latitude_match.group(2) )
-
-                    if payload_id not in self.payload_delivery_latitude[payload_id]:
-                        self.payload_delivery_latitude[payload_id] = []
-                    
-                    self.payload_delivery_latitude[payload_id].append(latitude)
-
+                    self.payload_delivery_latitude.append(latitude)
                 
                 if longitude_match:
-                    payload_id = longitude_match.group(1)
                     longitude = float( longitude_match.group(2) )
-
-                    if payload_id not in self.payload_delivery_longitude[payload_id]:
-                        self.payload_delivery_longitude[payload_id] = []
-                    
-                    self.payload_delivery_longitude[payload_id].append(longitude)
+                    self.payload_delivery_longitude.append(longitude)
 
                 if compartment_match:
-                    payload_id = compartment_match.group(1)
                     compartment = int( compartment_match.group(2) )
-
-                    if payload_id not in self.payload_delivery_compartment:
-                        self.payload_delivery_compartment[payload_id] = []
-                    
-                    self.payload_delivery_compartment[payload_id].append(compartment)
+                    self.payload_delivery_compartment.append(compartment)
 
     def deliver_payload_command(self):
 
-        self.download_payload_coord( 'payload_coord.txt' )
+        self.download_payload_coord( '/home/uhdt/Documents/GitHub/Autonomous/Official/FINAL CODE/payload_coord.txt' )
+        time.sleep( 5 )
 
         print( "Starting Payload Delivery Mission" )
 
