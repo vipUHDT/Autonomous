@@ -29,9 +29,9 @@ class CLASS:
         self.WAYPOINT_RADIUS = 5 # feet
         self.PAYLOAD_RADIUS = 5 # feet
         self.SEARCH_AREA_RADIUS = 5 # feet
-        self.WAYPOINT_SPEED = 10 # m/s
-        self.SEARCH_SPEED = 3 # m/s
-        self.DELIVER_SPEED = 4 # m/s
+        self.WAYPOINT_SPEED = 15 # m/s
+        self.SEARCH_SPEED = 10 # m/s
+        self.DELIVER_SPEED = 10 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -85,6 +85,7 @@ class CLASS:
         self.lap = 1
         self.payload = 1
         self.filename = f"image"
+
         self.waypoint_lap_latitude = [
             21.3997862
 
@@ -167,7 +168,11 @@ class CLASS:
         self.payload_delivery_compartment = [
 
         ]
-        
+
+        self.end_mission_latitude = 0.0
+
+        self.end_mission_longitude = 0.0
+
         print("AUTONOMOUS SCRIPT IS READY")
 
         while (self.IS_ARMED() != True):
@@ -186,14 +191,6 @@ class CLASS:
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
          
-    def connect_to_mavlink( self ):
-        print( "Connecting to Mavlink" )
-
-        self.UAS_mav = mavutil.mavlink_connection( self.connection_string, baud = 57600 )
-        self.UAS_mav.wait_heartbeat()
-        print( "Heartbeat from sustem {system %u component %u }" %( self.UAS_mav.target_system, self.UAS_mav.target_component ) )
-
-        print( "Connected to Mavlink" )
 
     def connect_to_dronekit( self ):
         print( "Connecting to DroneKit" )
@@ -418,81 +415,6 @@ class CLASS:
             return True
         return False
 
-
-    def spline_waypoint_command(self, latitude, longitude, seq):
-        """
-        Define a spline waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_NAV_SPLINE_WAYPOINT
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
-            0,
-            1, #auto continue 
-            0, #hold (s)
-            self.PAYLOAD_RADIUS, #Accept radius (m)
-            self.PAYLOAD_RADIUS, #pass radius (m)
-            0, #yaw (deg)
-            int(latitude*1e7),  
-            int(longitude*1e7),
-            self.ALTITUDE,
-            0
-            )
-
-        # Send the message
-        self.UAS_mav.mav.send(message)
-        #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
-    
-
-    def waypoint_command(self, latitude, longitude, seq):
-        """
-        Define a waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_NAV_WAYPOINT
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
-            0,
-            1, #auto continue 
-            0, #hold (s)
-            self.WAYPOINT_RADIUS, #Accept radius (m)
-            self.WAYPOINT_RADIUS, #pass radius (m)
-            math.nan, #yaw (deg)
-            int(latitude*1e7),  
-            int(longitude*1e7),
-            self.ALTITUDE,
-            0
-            )
-
-        # Send the message
-        self.UAS_mav.mav.send(message)
-
     def gpio_servo_command( self, servo_x, angle ):
         """
         Triggers servo using i2c protocol using adafruit_servokit library
@@ -570,7 +492,10 @@ class CLASS:
 
         print( "Starting Payload Delivery Mission" )
 
+        payloads_dropped = 0
+
         for i in range( len( self.payload_delivery_latitude ) ):
+
             print( f"Heading to payload #{i + 1}" )
             self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
             self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.PAYLOAD_RADIUS)
@@ -578,15 +503,23 @@ class CLASS:
             time.sleep( 2 )
 
             self.gpio_servo_command( self.payload_delivery_compartment[i], 0 )
+            payloads_dropped += 1
             print( f"Payload #{i + 1} Delivered" )
 
             time.sleep( 10 )
 
-            print( "Performing Waypoint Lap" )
-            self.dk_waypoint_lap()
-            print( "Waypoint Lap completed " )
+            if payloads_dropped <= 3:
+
+                print( "Performing Waypoint Lap" )
+                self.dk_waypoint_lap()
+                print( "Waypoint Lap completed " )
 
         print( "Payload Delivery Mission Completed" )
+
+    def end_mission( self ):
+
+        self.UAS_dk.simple_goto( LocationGlobalRelative( self.end_mission_latitude, self.end_mission_longitude, self.ALTITUDE ), groundspeed = self.WAYPOINT_SPEED )
+        self.waypoint_reached( self.end_mission_latitude, self.end_mission_longitude, self.WAYPOINT_RADIUS )
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
@@ -678,61 +611,6 @@ class CLASS:
         self.UAS_mav.target_component  # Component ID
         )
 
-
-    def spline_waypoint_lap( self ):
-        """
-        Define a sequence of spline waypoints to be followed by the UAS in a lap.
-
-        Returns:
-            str: A message indicating lap completion.
-
-        """
-        self.count(len(self.waypoint_lap_latitude)+1)
-        self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        start = time.time()
-        for wp in range(len(self.waypoint_lap_latitude)):
-            self.spline_waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
-        self.mission_start()
-        self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)):
-            self.response("MISSION_ITEM_REACHED")
-        end = time.time()
-        difference = end - start
-        self.waypoint_lap_time.append(difference)
-        self.lap = self.lap + 1
-        return print(f"DONE WITH LAP {self.lap - 1}")
-
-    def waypoint_lap( self ):
-        """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
-
-        Returns:
-            str: A message indicating lap completion.
-
-        """        
-        self.count(len(self.waypoint_lap_latitude)+1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        start = time.time()
-        for wp in range(len(self.waypoint_lap_latitude)):
-            self.waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
-        self.mission_start()
-        self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)):
-            self.response("MISSION_ITEM_REACHED")
-        end = time.time()
-        difference = end - start
-        self.waypoint_lap_time.append(difference)
-        self.lap = self.lap + 1
-        return print(f"DONE WITH LAP {self.lap - 1}")
-    
     def dk_waypoint_lap( self ):
         """
         Define a sequence of waypoints using DroneKit to be followed by the UAS in a lap.
@@ -796,129 +674,6 @@ class CLASS:
         self.search_area_waypoint_time.append(difference)
 
         return print("UAS COMPLETED SEARCH THE AREA")
-    
-    def user_input(self):
-        """
-        Allow the user to input a set of latitude and longitude coordinates for waypoints.
-
-        Returns:
-            None
-        """
-        # Ask for the number of coordinates and create a latitude and longitude array
-        while 1:
-            # Check for non-integer value
-            try:
-                number_of_coordinates = int(input("\nHow many coordinates?\n"))
-                break
-            except ValueError:
-                print("Enter an integer")
-
-        self.waypoint_lap_latitude  = array('f', [0] * number_of_coordinates)
-        self.waypoint_lap_longitude = array('f', [0] * number_of_coordinates)
-
-        # Ask for longitude and latitude coordinates and put them in their respective arrays
-        for i in range(number_of_coordinates):
-            while 1:
-                # Check for non-integer values
-                try:
-                    self.waypoint_lap_latitude[i] = float(input(f"Enter latitude {i + 1}:\n"))
-                    break
-                except FloatingPointError:
-                    print("Coordinate must be an integer")
-
-            while 1:
-                # Check for non-integer values
-                try:
-                    self.waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
-                    break 
-                except FloatingPointError:
-                    print("Coordinate must be an integer")
-
-        # Print the coordinates in the array
-        print("\nLatitudes entered:")
-        for i in range(number_of_coordinates):
-            if (i == number_of_coordinates-1):
-                print(self.waypoint_lap_latitude [i])
-            else:
-                print(self.waypoint_lap_latitude [i], end=", ")
-
-                while True:
-                    try:
-                        response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                        if response in [1, 2]:
-                            if (response ==2):
-                                self.user_input()
-                            else:
-                                break
-                        else:
-                            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
-
-                    except ValueError as e:
-                        print(e)
-            
-
-        print("\nLongitudes entered:")
-        for i in range(number_of_coordinates):
-            if (i == number_of_coordinates-1):
-                print(self.waypoint_lap_longitude[i])
-            else:
-                print(self.waypoint_lap_longitude[i], end=", ") 
-
-        #------------------------------------------------------------#
-        # Display parameters to the user and give option to change the parameters
-
-        while 1:
-            print(f"\nSET PARAMETERS ARE:\n")
-            print(f"ALTITUDE: {self.ALTITUDE}")
-            print(f"WAYPOINT_RADIUS: {self.WAYPOINT_RADIUS}")
-            print(f"PAYLOAD_RADIUS: {self.PAYLOAD_RADIUS}")
-            print(f"SEARCH_AREA_RADIUS: {self.SEARCH_AREA_RADIUS}")
-
-            try:
-                # Ask user if the parameters are ok
-                response = int(input("\nARE THESE PARAMETERS OK?\n1-YES or 2-NO\n"))
-                if (response in [1, 2]):
-                    if (response == 1):
-                        break # Parameters are ok
-                    if (response == 2):
-
-                        # Ask user to enter new altitude
-                        while 1:
-                            try:
-                                self.ALTITUDE = float(input("\nENTER NEW ALTITUDE\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-                    
-                        # Ask user to enter new waypoint_radius
-                        while 1:
-                            try:
-                                self.WAYPOINT_RADIUS = float(input("\nENTER NEW WAYPOINT_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                        # Ask user to enter new payload_radius
-                        while 1:
-                            try:
-                                self.PAYLOAD_RADIUS = float(input("\nENTER NEW PAYLOAD_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                        # Ask user to enter new search_area_radius
-                        while 1:
-                            try:
-                                self.SEARCH_AREA_RADIUS = float(input("\nENTER NEW SEARCH_AREA_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                else:
-                    raise ValueError("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # response not 1 or 2
-
-            except ValueError:
-                print("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # invalid response
 
     def sum(self, arr):
         """
