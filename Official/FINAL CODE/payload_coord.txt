@@ -1,15 +1,16 @@
-Latitude of payload A: 21.40034560
-Longitude of payload A: -157.76474810
-Compartment of payload A: 3
+Latitude of payload A: 21.400446222714663
+Longitude of payload A: -157.76462515632406
+Compartment of payload A: 0
 
-Latitude of payload B: 21.40040680
-Longitude of payload B: -157.76459580
-Compartment of payload B: 0
+Latitude of payload B: 21.400483931278423
+Longitude of payload B: -157.7644986351466
+Compartment of payload B: 1
 
-Latitude of payload C: 21.40057750
-Longitude of payload C: -157.76415800
+Latitude of payload C: 21.400461893874127
+Longitude of payload C: -157.76435813439926
 Compartment of payload C: 2
 
-Latitude of payload D: 21.40069860
-Longitude of payload D: -157.76414190
-Compartment of payload D: 1
+Latitude of payload D: 21.400462543918117
+Longitude of payload D: -157.76435829252387
+Compartment of payload D: 3
+

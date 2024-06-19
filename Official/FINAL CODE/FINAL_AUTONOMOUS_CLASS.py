@@ -5,6 +5,7 @@ import multiprocessing
 import subprocess
 import exiftool
 import re
+import shutil
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
@@ -24,7 +25,7 @@ class CLASS:
         #PARAMTERS
         self.ALTITUDE = 22.8 # meters
         self.alt_AD = 26
-        self.alt_IP = 24.384
+        self.alt_IP = 27
         self.WAYPOINT_RADIUS = 5 # feet
         self.PAYLOAD_RADIUS = 5 # feet
         self.SEARCH_AREA_RADIUS = 5 # feet
@@ -33,17 +34,19 @@ class CLASS:
         self.DELIVER_SPEED = 4 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
-        self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
-        # self.connection_string = "/dev/ttyACM0" #usb to micro usb
+        # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
+        self.connection_string = "/dev/ttyACM0" #usb to micro usb
         self.SK = ServoKit( channels = 16 )
 
         #Connect to DroneKit
         self.connect_to_dronekit()
         
         print('CREATING IMAGE DIRECTORY')
-        image_dir = f'image_{time.ctime(time.time())}'
+        image_dir = f'buffer'
+        full_dir = f'watchdog'
         print(f'MADE DIRECTORY {image_dir}')
         os.mkdir(image_dir)
+        os.mkdir(full_dir)
         os.chdir(str(image_dir))
         print(f'MOVED TO {image_dir} DIRECTORY')
         print("CREATING TEST DATA FILE")
@@ -64,10 +67,10 @@ class CLASS:
 
 
         # connect the camera
-        print("Connecting to the camera")
-        self.command = ["gphoto2", "--auto-detect"]
-        self.subprocess_execute(self.command)
-        print('Camera Connected')
+        # print("Connecting to the camera")
+        # self.command = ["gphoto2", "--auto-detect"]
+        # self.subprocess_execute(self.command)
+        # print('Camera Connected')
 
         #declaring initial variable
         self.pitch = 0.0
@@ -83,16 +86,12 @@ class CLASS:
         self.payload = 1
         self.filename = f"image"
         self.waypoint_lap_latitude = [
-            21.4001083,
-            21.4005141,
-            21.4011884,
-            21.4006253
+            21.3997862
+
         ]
         self.waypoint_lap_longitude = [
-            -157.7645811,
-            -157.7634291,
-            -157.7637698,
-            -157.7649419
+            -157.7643800
+
         ]
 
         self.search_area_latitude = [
@@ -560,8 +559,14 @@ class CLASS:
 
     def deliver_payload_command(self):
 
-        self.download_payload_coord( '/home/uhdt/Documents/GitHub/Autonomous/Official/FINAL CODE/payload_coord.txt')
-        time.sleep( 3 )
+        file_path = '/home/uhdt/UAV_software/Autonomous/Official/FINAL CODE/payload_coord.txt'
+
+        while not os.path.exists( file_path ):
+            print( "Waiting for file" )
+            time.sleep( 1 )
+
+        self.download_payload_coord( file_path )
+        time.sleep( 5 )
 
         print( "Starting Payload Delivery Mission" )
 
@@ -784,6 +789,7 @@ class CLASS:
             p2.join()
             #geotag
             self.geotag(f'image{x+1}_{self.alt_IP}.jpg')
+            shutil.copy2( f'image{x+1}_{self.alt_IP}.jpg', f'/home/uhdt/UAV_software/Autonomous/watchdog/image{x+1}_{self.alt_IP}.jpg')
 
         end = time.time()
         difference = end - start
