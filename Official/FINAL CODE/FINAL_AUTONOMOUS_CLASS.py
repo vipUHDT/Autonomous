@@ -4,6 +4,8 @@ import math
 import multiprocessing
 import subprocess
 import exiftool
+import re
+import shutil
 from pymavlink import mavutil
 from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
 from array import array
@@ -21,12 +23,15 @@ class CLASS:
         :return: None
         """
         #PARAMTERS
-        self.ALTITUDE = 22.8 #meters
+        self.ALTITUDE = 22.8 # meters
         self.alt_AD = 26
-        self.alt_IP = 26
-        self.WAYPOINT_RADIUS = 3 #feet
-        self.PAYLOAD_RADIUS = 2 #feet
-        self.SEARCH_AREA_RADIUS = 2 #feet
+        self.alt_IP = 27
+        self.WAYPOINT_RADIUS = 5 # feet
+        self.PAYLOAD_RADIUS = 5 # feet
+        self.SEARCH_AREA_RADIUS = 5 # feet
+        self.WAYPOINT_SPEED = 20 # m/s
+        self.SEARCH_SPEED = 15 # m/s
+        self.DELIVER_SPEED = 20 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -37,9 +42,11 @@ class CLASS:
         self.connect_to_dronekit()
         
         print('CREATING IMAGE DIRECTORY')
-        image_dir = f'image_{time.ctime(time.time())}'
+        image_dir = f'buffer'
+        full_dir = f'watchdog'
         print(f'MADE DIRECTORY {image_dir}')
         os.mkdir(image_dir)
+        os.mkdir(full_dir)
         os.chdir(str(image_dir))
         print(f'MOVED TO {image_dir} DIRECTORY')
         print("CREATING TEST DATA FILE")
@@ -60,10 +67,10 @@ class CLASS:
 
 
         # connect the camera
-        print("Connecting to the camera")
-        self.command = ["gphoto2", "--auto-detect"]
-        self.subprocess_execute(self.command)
-        print('Camera Connected')
+        # print("Connecting to the camera")
+        # self.command = ["gphoto2", "--auto-detect"]
+        # self.subprocess_execute(self.command)
+        # print('Camera Connected')
 
         #declaring initial variable
         self.pitch = 0.0
@@ -78,110 +85,96 @@ class CLASS:
         self.lap = 1
         self.payload = 1
         self.filename = f"image"
+
         self.waypoint_lap_latitude = [
-            38.31614610,
-            38.31697950,
-            38.31659230,
-            38.31686170,
-            38.31827580,
-            38.31838530,
-            38.31568320,
-            38.31509390,
-            38.31359550,
-            38.31614610
+
         ]
         self.waypoint_lap_longitude = [
-            -76.55602810,
-            -76.55574920,
-            -76.55286310,
-            -76.55199410,
-            -76.55170440,
-            -76.54568550,
-            -76.54399040,
-            -76.54080390,
-            -76.54139400,
-            -76.55602810
+
+        ]
+
+        self.waypoint_lap_alt = [
+
         ]
 
         self.search_area_latitude = [
-            38.31455680,
-            38.31453760,
-            38.31452160,
-            38.31450550,
-            38.31449270,
-            38.31447680,
-            38.31445760,
-            38.31444160,
-            38.31442880,
-            38.31441600,
-            38.31439680,
-            38.31438080,
-            38.31436800,
-            38.31435840,
-            38.31425600,
-            38.31426560,
-            38.31428160,
-            38.31429760,
-            38.31431680,
-            38.31432640,
-            38.31434240,
-            38.31436160,
-            38.31437440,
-            38.31439360,
-            38.31440640,
-            38.31441920,
-            38.31443840,
-            38.31445440
+            21.40034560,
+            21.40037550,
+            21.40040680,
+            21.40043730,
+            21.40045990,
+            21.40049070,
+            21.40051790,
+            21.40054630,
+            21.40057750,
+            21.40060310,
+            21.40063370,
+            21.40066460,
+            21.40069360,
+            21.40072640,
+            21.40080660,
+            21.40078100,
+            21.40075670,
+            21.40072670,
+            21.40069860,
+            21.40067150,
+            21.40064150,
+            21.40062030,
+            21.40059160,
+            21.40056100,
+            21.40053540,
+            21.40050790,
+            21.40047670,
+            21.40044610
         ]
 
         self.search_area_longitude = [
-            -76.54514560,
-            -76.54504960,
-            -76.54496000,
-            -76.54487030,
-            -76.54477440,
-            -76.54469120,
-            -76.54460150,
-            -76.54451200,
-            -76.54441600,
-            -76.54432640,
-            -76.54424320,
-            -76.54415360,
-            -76.54405760,
-            -76.54396800,
-            -76.54400000,
-            -76.54408960,
-            -76.54417920,
-            -76.54427520,
-            -76.54435830,
-            -76.54444800,
-            -76.54453760,
-            -76.54463360,
-            -76.54472320,
-            -76.54481280,
-            -76.54489600,
-            -76.54499190,
-            -76.54508160,
-            -76.54517120
-            
+            -157.76474810,
+            -157.76467230,
+            -157.76459580,
+            -157.76452110,
+            -157.76445170,
+            -157.76437690,
+            -157.76430380,
+            -157.76423070,
+            -157.76415800,
+            -157.76408290,
+            -157.76400980,
+            -157.76393770,
+            -157.76386530,
+            -157.76379320,
+            -157.76384650,
+            -157.76391860,
+            -157.76399170,
+            -157.76406650,
+            -157.76414190,
+            -157.76421630,
+            -157.76429140,
+            -157.76435310,
+            -157.76442490,
+            -157.76449730,
+            -157.76457310,
+            -157.76464820,
+            -157.76472190,
+            -157.76479700
         ]
 
         self.payload_delivery_latitude = [
-            38.31447620,
-            38.31447200,
-            38.31440570,
-            38.31436890
+            
         ]
 
-        self.payload_deliver_longitude = [
-            -76.54501900,
-            -76.54483930,
-            -76.54458580,
-            -76.54426800
+        self.payload_delivery_longitude = [
+            
         ]
 
-        # self.user_input()
-        
+        self.payload_delivery_compartment = [
+
+        ]
+
+        self.end_mission_latitude = 0.0
+
+        self.end_mission_longitude = 0.0
+
         print("AUTONOMOUS SCRIPT IS READY")
 
         while (self.IS_ARMED() != True):
@@ -200,14 +193,6 @@ class CLASS:
         print("UAS IS NOW IN GUIDED MODE")
         print("!------------------ MISSION STARTING ----------------------!")
          
-    def connect_to_mavlink( self ):
-        print( "Connecting to Mavlink" )
-
-        self.UAS_mav = mavutil.mavlink_connection( self.connection_string, baud = 57600 )
-        self.UAS_mav.wait_heartbeat()
-        print( "Heartbeat from sustem {system %u component %u }" %( self.UAS_mav.target_system, self.UAS_mav.target_component ) )
-
-        print( "Connected to Mavlink" )
 
     def connect_to_dronekit( self ):
         print( "Connecting to DroneKit" )
@@ -432,81 +417,6 @@ class CLASS:
             return True
         return False
 
-
-    def spline_waypoint_command(self, latitude, longitude, seq):
-        """
-        Define a spline waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_NAV_SPLINE_WAYPOINT
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
-            0,
-            1, #auto continue 
-            0, #hold (s)
-            self.PAYLOAD_RADIUS, #Accept radius (m)
-            self.PAYLOAD_RADIUS, #pass radius (m)
-            0, #yaw (deg)
-            int(latitude*1e7),  
-            int(longitude*1e7),
-            self.ALTITUDE,
-            0
-            )
-
-        # Send the message
-        self.UAS_mav.mav.send(message)
-        #msg = self.UAS_mav.recv_match(type = dialect.MAVLink_mission_item_int_message.msgname, blocking = True)
-    
-
-    def waypoint_command(self, latitude, longitude, seq):
-        """
-        Define a waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_NAV_WAYPOINT
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
-            0,
-            1, #auto continue 
-            0, #hold (s)
-            self.WAYPOINT_RADIUS, #Accept radius (m)
-            self.WAYPOINT_RADIUS, #pass radius (m)
-            math.nan, #yaw (deg)
-            int(latitude*1e7),  
-            int(longitude*1e7),
-            self.ALTITUDE,
-            0
-            )
-
-        # Send the message
-        self.UAS_mav.mav.send(message)
-
     def gpio_servo_command( self, servo_x, angle ):
         """
         Triggers servo using i2c protocol using adafruit_servokit library
@@ -547,27 +457,71 @@ class CLASS:
 
         # Send the message
         self.UAS_mav.mav.send(message)
-      
+    
+    def download_payload_coord( self, file_name ):
+        
+        with open( file_name, 'r' ) as file:
+            for line in file:
+                latitude_match = re.search( r"Latitude of payload (\w+): (-?\d+\.\d+)", line )
+                longitude_match = re.search( r"Longitude of payload (\w+): (-?\d+\.\d+)", line)
+                compartment_match = re.search( r"Compartment of payload (\w+): (\d+)", line )
+
+                if latitude_match:
+                    print( "Latitude match found:", latitude_match.group() )
+                    latitude = float( latitude_match.group(2) )
+                    self.payload_delivery_latitude.append(latitude)
+                
+                if longitude_match:
+                    print( "Longitude match found:", longitude_match.group() )
+                    longitude = float( longitude_match.group(2) )
+                    self.payload_delivery_longitude.append(longitude)
+
+                if compartment_match:
+                    print( "Compartment match found:", compartment_match.group() )
+                    compartment = int( compartment_match.group(2) )
+                    self.payload_delivery_compartment.append(compartment)
+
     def deliver_payload_command(self):
+
+        file_path = '/home/uhdt/UAV_software/Autonomous/Official/FINAL CODE/payload_coord.txt'
+
+        while not os.path.exists( file_path ):
+            print( "Waiting for file" )
+            time.sleep( 1 )
+
+        self.download_payload_coord( file_path )
+        time.sleep( 5 )
 
         print( "Starting Payload Delivery Mission" )
 
+        payloads_dropped = 0
+
         for i in range( len( self.payload_delivery_latitude ) ):
+
             print( f"Heading to payload #{i + 1}" )
-            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.alt_AD ), groundspeed = 3.5 )
-            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_deliver_longitude[i], self.WAYPOINT_RADIUS)
+            self.UAS_dk.simple_goto(LocationGlobalRelative( self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.alt_AD ), groundspeed = self.DELIVER_SPEED )
+            self.waypoint_reached(self.payload_delivery_latitude[i], self.payload_delivery_longitude[i], self.PAYLOAD_RADIUS)
 
+            time.sleep( 2 )
 
-            self.gpio_servo_command( i, 0 )
+            self.gpio_servo_command( self.payload_delivery_compartment[i], 0 )
+            payloads_dropped += 1
             print( f"Payload #{i + 1} Delivered" )
 
-            time.sleep( 15 )
+            time.sleep( 10 )
 
-            print( "Performing Waypoint Lap" )
-            self.dk_waypoint_lap()
-            print( "Waypoint Lap completed " )
+            if payloads_dropped <= 3:
+
+                print( "Performing Waypoint Lap" )
+                self.dk_waypoint_lap()
+                print( "Waypoint Lap completed " )
 
         print( "Payload Delivery Mission Completed" )
+
+    def end_mission( self ):
+
+        self.UAS_dk.simple_goto( LocationGlobalRelative( self.end_mission_latitude, self.end_mission_longitude, self.ALTITUDE ), groundspeed = self.WAYPOINT_SPEED )
+        self.waypoint_reached( self.end_mission_latitude, self.end_mission_longitude, self.WAYPOINT_RADIUS )
     
     def waypoint_reached (self, latitude_deg, longitude_deg, radius ):
         """
@@ -659,61 +613,6 @@ class CLASS:
         self.UAS_mav.target_component  # Component ID
         )
 
-
-    def spline_waypoint_lap( self ):
-        """
-        Define a sequence of spline waypoints to be followed by the UAS in a lap.
-
-        Returns:
-            str: A message indicating lap completion.
-
-        """
-        self.count(len(self.waypoint_lap_latitude)+1)
-        self.spline_waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        start = time.time()
-        for wp in range(len(self.waypoint_lap_latitude)):
-            self.spline_waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
-        self.mission_start()
-        self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)):
-            self.response("MISSION_ITEM_REACHED")
-        end = time.time()
-        difference = end - start
-        self.waypoint_lap_time.append(difference)
-        self.lap = self.lap + 1
-        return print(f"DONE WITH LAP {self.lap - 1}")
-
-    def waypoint_lap( self ):
-        """
-        Define a sequence of waypoints to be followed by the UAS in a lap.
-
-        Returns:
-            str: A message indicating lap completion.
-
-        """        
-        self.count(len(self.waypoint_lap_latitude)+1)
-        self.waypoint_command(self.waypoint_lap_latitude[ 0 ], self.waypoint_lap_longitude[ 0 ],0)
-        start = time.time()
-        for wp in range(len(self.waypoint_lap_latitude)):
-            self.waypoint_command(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],wp+1)
-            # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
-            # print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],75))
-            # self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
-        self.mission_start()
-        self.response("MISSION_ACK")
-        for reached in range(len(self.waypoint_lap_latitude)):
-            self.response("MISSION_ITEM_REACHED")
-        end = time.time()
-        difference = end - start
-        self.waypoint_lap_time.append(difference)
-        self.lap = self.lap + 1
-        return print(f"DONE WITH LAP {self.lap - 1}")
-    
     def dk_waypoint_lap( self ):
         """
         Define a sequence of waypoints using DroneKit to be followed by the UAS in a lap.
@@ -729,7 +628,7 @@ class CLASS:
         for wp in range(len(self.waypoint_lap_latitude)):
             # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE), groundspeed = 3.5)
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.waypoint_lap_alt[ wp ]), groundspeed = self.WAYPOINT_SPEED )
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
         
         end = time.time()
@@ -756,8 +655,8 @@ class CLASS:
         for x in range(len(self.search_area_latitude)):
             print(x)
             print(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = 3.5)
-            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.WAYPOINT_RADIUS)
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.search_area_latitude[x],self.search_area_longitude[x],self.alt_IP), groundspeed = self.SEARCH_SPEED )
+            self.waypoint_reached(self.search_area_latitude[x],self.search_area_longitude[x], self.SEARCH_AREA_RADIUS)
             print(f"DONE WITH SEARCH AREA WAYPOINT {x}")
             #get attitide data
             p1 = multiprocessing.Process(target=self.attitude())
@@ -770,135 +669,13 @@ class CLASS:
             p2.join()
             #geotag
             self.geotag(f'image{x+1}_{self.alt_IP}.jpg')
+            shutil.copy2( f'image{x+1}_{self.alt_IP}.jpg', f'/home/uhdt/UAV_software/Autonomous/watchdog/image{x+1}_{self.alt_IP}.jpg')
 
         end = time.time()
         difference = end - start
         self.search_area_waypoint_time.append(difference)
 
         return print("UAS COMPLETED SEARCH THE AREA")
-    
-    def user_input(self):
-        """
-        Allow the user to input a set of latitude and longitude coordinates for waypoints.
-
-        Returns:
-            None
-        """
-        # Ask for the number of coordinates and create a latitude and longitude array
-        while 1:
-            # Check for non-integer value
-            try:
-                number_of_coordinates = int(input("\nHow many coordinates?\n"))
-                break
-            except ValueError:
-                print("Enter an integer")
-
-        self.waypoint_lap_latitude  = array('f', [0] * number_of_coordinates)
-        self.waypoint_lap_longitude = array('f', [0] * number_of_coordinates)
-
-        # Ask for longitude and latitude coordinates and put them in their respective arrays
-        for i in range(number_of_coordinates):
-            while 1:
-                # Check for non-integer values
-                try:
-                    self.waypoint_lap_latitude[i] = float(input(f"Enter latitude {i + 1}:\n"))
-                    break
-                except FloatingPointError:
-                    print("Coordinate must be an integer")
-
-            while 1:
-                # Check for non-integer values
-                try:
-                    self.waypoint_lap_longitude[i] = float(input(f"Enter longitude {i + 1}:\n"))
-                    break 
-                except FloatingPointError:
-                    print("Coordinate must be an integer")
-
-        # Print the coordinates in the array
-        print("\nLatitudes entered:")
-        for i in range(number_of_coordinates):
-            if (i == number_of_coordinates-1):
-                print(self.waypoint_lap_latitude [i])
-            else:
-                print(self.waypoint_lap_latitude [i], end=", ")
-
-                while True:
-                    try:
-                        response = int(input("\nIS THE VALUE OF LATITUDE AND LONGITUDE CORRECT?\n1-YES or 2-NO\n"))
-                        if response in [1, 2]:
-                            if (response ==2):
-                                self.user_input()
-                            else:
-                                break
-                        else:
-                            raise ValueError("\nInvalid response. Please enter 1-YES or 2-NO.")
-
-                    except ValueError as e:
-                        print(e)
-            
-
-        print("\nLongitudes entered:")
-        for i in range(number_of_coordinates):
-            if (i == number_of_coordinates-1):
-                print(self.waypoint_lap_longitude[i])
-            else:
-                print(self.waypoint_lap_longitude[i], end=", ") 
-
-        #------------------------------------------------------------#
-        # Display parameters to the user and give option to change the parameters
-
-        while 1:
-            print(f"\nSET PARAMETERS ARE:\n")
-            print(f"ALTITUDE: {self.ALTITUDE}")
-            print(f"WAYPOINT_RADIUS: {self.WAYPOINT_RADIUS}")
-            print(f"PAYLOAD_RADIUS: {self.PAYLOAD_RADIUS}")
-            print(f"SEARCH_AREA_RADIUS: {self.SEARCH_AREA_RADIUS}")
-
-            try:
-                # Ask user if the parameters are ok
-                response = int(input("\nARE THESE PARAMETERS OK?\n1-YES or 2-NO\n"))
-                if (response in [1, 2]):
-                    if (response == 1):
-                        break # Parameters are ok
-                    if (response == 2):
-
-                        # Ask user to enter new altitude
-                        while 1:
-                            try:
-                                self.ALTITUDE = float(input("\nENTER NEW ALTITUDE\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-                    
-                        # Ask user to enter new waypoint_radius
-                        while 1:
-                            try:
-                                self.WAYPOINT_RADIUS = float(input("\nENTER NEW WAYPOINT_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                        # Ask user to enter new payload_radius
-                        while 1:
-                            try:
-                                self.PAYLOAD_RADIUS = float(input("\nENTER NEW PAYLOAD_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                        # Ask user to enter new search_area_radius
-                        while 1:
-                            try:
-                                self.SEARCH_AREA_RADIUS = float(input("\nENTER NEW SEARCH_AREA_RADIUS\n"))
-                                break
-                            except ValueError:
-                                print("\nInvalid Response. Please enter a number.\n")
-
-                else:
-                    raise ValueError("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # response not 1 or 2
-
-            except ValueError:
-                print("\nInvalid Response. Please enter 1-YES or 2-NO.\n") # invalid response
 
     def sum(self, arr):
         """
@@ -976,46 +753,6 @@ class CLASS:
                         file.write(f"{data_name}: {data_values}\n")
                         file.write(f"{data_name} average: {data_average} seconds\n")
                         file.write(f"{data_name} sum: {data_sum} seconds\n\n")
-
-    def KAMIKAZE():
-        """
-        Kills the UAS by completely cutting power to drone
-
-        Returns:
-            None
-        """
-        #send signal to relay to kill drone
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⠤⠖⠛⣷⣶⣶⠿⢿⣿⣿⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡴⣾⣿⠋⠀⠀⠀⢾⣿⠏⠀⠀⠀⠀⠈⠛⠻⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⠋⠀⠙⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢻⣷⣶⣦⣤⡀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⢀⣠⣤⣤⣠⣶⣿⡅⠀⠀⠀⣤⣤⣴⣶⠗⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⠆⠀⠹⣷⣤⡀⠀⠀⠀⠀⠀")
-        print("⠀⠀⣰⡿⠋⠉⢹⣿⠁⠉⠀⠀⠀⠀⠀⣿⠏⠀⠀⠀⠀⢀⣠⣤⠀⠀⠀⠀⠲⣤⣄⣀⣀⠀⠀⠀⠙⢻⣷⣦⡀⠀⠀")
-        print("⠀⣰⣿⠇⠀⠀⠸⠿⠂⠀⠀⠀⠀⠀⠀⠟⠀⠀⠀⠀⠠⣿⡏⠁⠀⠀⠀⠀⠀⠈⢿⠁⠀⠀⠀⠀⠀⠸⣿⠉⢿⣆⠀")
-        print("⢰⣿⡁⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣦⡀⠛⢿⣦⠀⠀⡀⠀⠀⠀⠘⠀⠀⠀⠀⠀⠀⠀⠛⢀⠀⣿⡄")
-        print("⢸⡿⠁⠀⠀⢿⣄⠀⡀⠀⠀⠀⠀⢀⣤⣀⣀⣀⣤⣿⣷⣶⡿⠻⣿⣿⠿⣷⣦⣄⣸⣷⠀⠀⠀⢠⣄⠀⠀⠈⠛⠿⣿")
-        print("⠸⣿⣾⠃⠀⠀⠛⠿⠃⠀⠀⠰⣤⣴⣿⠿⠿⠿⠛⠉⠉⠀⠀⡄⠀⢰⣿⠟⢿⣿⣿⣄⡀⢰⣿⡟⠀⠀⠀⠀⠀⢹⡇")
-        print("⠀⢸⣿⢸⡆⠀⠶⠿⠀⣀⡀⠠⣬⣭⣭⣀⠀⣆⠀⠀⢠⠀⠀⣰⠃⣰⣿⣿⠏⠀⠀⣉⣿⣿⠀⠙⠷⠀⠀⢠⣶⡀⣸⣧")
-        print("⠀⠸⣿⣿⣷⡄⠀⠀⠘⠋⠁⠀⠀⠀⠉⡛⢷⣽⣦⠀⢸⡄⠀⣿⢀⣿⣿⣿⡶⠒⠛⢋⡅⠀⠀⠀⢀⣴⢀⡼⠟⠛⠟⠁")
-        print("⠀⠀⠈⠙⠻⣷⣶⣦⣴⡾⠛⠶⠦⣶⠾⢿⣶⣬⣿⡆⠸⣧⢠⡇⢸⣿⣣⣥⣄⣀⣈⣤⣶⣦⣴⣿⠟⠋⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⣽⣿⠀⢿⠈⣧⣼⢹⣿⣀⣀⠉⠛⠛⠉⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⡶⢿⡛⢹⣿⡄⠸⠇⣿⡇⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⡿⢛⣉⣣⣾⣿⠛⣿⣷⠀⡀⢸⣇⢸⡟⠛⣿⡇⢠⡟⢿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣅⠀⠀⡉⠛⢿⣅⣀⣿⣿⠀⣿⣄⣉⣹⣧⡴⢾⣯⡀⠈⠋⠉⢻⣿⡀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣏⣀⣾⣏⠀⠀⠈⠙⠿⠿⠋⢻⡟⠋⠛⢿⡀⠀⠸⠀⠀⣀⠀⠀⣽⣿⡆⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⠿⢿⣷⣀⣀⣼⣦⠀⠀⠀⢁⣀⣠⣶⡀⠀⣀⣀⣀⣼⣤⣾⣿⡿⠇⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠛⠿⠿⣿⣷⣶⣿⠿⠟⣿⠛⠿⣶⣿⣿⠿⠋⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⣰⠃⣿⡇⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⢻⣇⠀⣿⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠘⣿⠀⣿⠀⢿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢿⣿⠀⣿⠀⣿⡆⠸⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣯⣾⡟⠀⠁⠀⢿⣇⠀⢻⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠋⣻⣷⠿⠋⠀⡀⠀⠀⠸⢿⡄⠀⢻⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠖⠛⠁⠀⠀⣰⠇⠀⠀⠀⠀⠀⠀⠀⠈⠙⠓⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-        print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-
-
-
-        return print("UAS TERMINATED")
 
 
 
