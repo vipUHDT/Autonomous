@@ -29,9 +29,9 @@ class CLASS:
         self.WAYPOINT_RADIUS = 5 # feet
         self.PAYLOAD_RADIUS = 5 # feet
         self.SEARCH_AREA_RADIUS = 5 # feet
-        self.WAYPOINT_SPEED = 15 # m/s
-        self.SEARCH_SPEED = 10 # m/s
-        self.DELIVER_SPEED = 10 # m/s
+        self.WAYPOINT_SPEED = 20 # m/s
+        self.SEARCH_SPEED = 15 # m/s
+        self.DELIVER_SPEED = 20 # m/s
         #connecting to UAS with dronekit
         print("Connecting to UAS")
         # self.connection_string = 'udp:127.0.0.1:14551' #Software in the loop
@@ -87,11 +87,13 @@ class CLASS:
         self.filename = f"image"
 
         self.waypoint_lap_latitude = [
-            21.3997862
 
         ]
         self.waypoint_lap_longitude = [
-            -157.7643800
+
+        ]
+
+        self.waypoint_lap_alt = [
 
         ]
 
@@ -626,7 +628,7 @@ class CLASS:
         for wp in range(len(self.waypoint_lap_latitude)):
             # self.UAS_dk = connect(self.connection_string, baud=57600, wait_ready=True)
             print(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE))
-            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.ALTITUDE), groundspeed = self.WAYPOINT_SPEED )
+            self.UAS_dk.simple_goto(LocationGlobalRelative(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ],self.waypoint_lap_alt[ wp ]), groundspeed = self.WAYPOINT_SPEED )
             self.waypoint_reached(self.waypoint_lap_latitude[ wp ], self.waypoint_lap_longitude[ wp ], self.WAYPOINT_RADIUS)
         
         end = time.time()
