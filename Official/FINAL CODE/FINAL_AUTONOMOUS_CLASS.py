@@ -427,36 +427,6 @@ class CLASS:
         self.SK.servo[ servo_x ].angle = angle
         time.sleep( 1 )
         print( "Dropped Payload" )
-
-    def loiter_command(self, time, seq):
-        """
-        Define a waypoint command.
-
-        Args:
-            latitude (float): The latitude coordinate.
-            longitude (float): The longitude coordinate.
-            seq (int): The number sequence according to mission.
-
-        Returns:
-            None
-        """ 
-
-        command = dialect.MAV_CMD_NAV_LOITER_TIME
-
-        message = dialect.MAVLink_mission_item_int_message(
-            self.UAS_mav.target_system,  #target_system
-            self.UAS_mav.target_component, #target_component
-            seq,
-            dialect.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            command, #MAV_CMD_NAV_WAYPOINT (16) or try to change it to  waypoint_command
-            0,
-            1, #auto continue 
-            0, #hold (s)
-            time,0,1,0,0,0,0
-            )
-
-        # Send the message
-        self.UAS_mav.mav.send(message)
     
     def download_payload_coord( self, file_name ):
         
